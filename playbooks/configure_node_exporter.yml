@@ -1,0 +1,68 @@
+---
+- name: Choisir et installer la dernière version du Node Exporter
+  hosts: hosts
+  become: yes
+  vars_files: ../vars/main.yml
+
+  tasks:
+    - name: Récupérer les informations sur la dernière release depuis GitHub
+      uri:
+        url: "https://api.github.com/repos/prometheus/node_exporter/releases/latest"
+        return_content: yes
+      register: latest_release
+
+    - name: Analyser les versions disponibles
+      set_fact:
+        available_versions: "{{ latest_release.json.assets | map(attribute='name') | list }}"
+      when: latest_release.status == 200
+
+    - name: Débogage - Afficher available_versions
+      debug:
+        var: available_versions
+      when: latest_release.status == 200
+
+    - name: Sélectionner la version souhaitée
+      set_fact:
+        selected_version: "{{ available_versions | select('match', '^node_exporter-.*' + prometheus_architecture + '.tar.gz') | list | first }}"
+      when: latest_release.status == 200
+
+    - name: Débogage - Afficher selected_version
+      debug:
+        var: selected_version
+      when: latest_release.status == 200
+
+    - name: Vérifier si la version sélectionnée est disponible
+      fail:
+        msg: "La version '{{ selected_version }}' n'est pas disponible."
+      when: selected_version not in available_versions
+
+    - name: Télécharger la version sélectionnée
+      get_url:
+        url: "https://github.com/prometheus/node_exporter/releases/latest/download/{{ selected_version }}"
+        dest: /opt/{{ selected_version }}
+      when: selected_version in available_versions
+
+    - name: Extraire l'archive
+      command: tar xfz /opt/{{ selected_version }} -C /opt/
+      when: selected_version in available_versions
+
+    - name: Supprimer l'archive téléchargée
+      file:
+        path: /opt/{{ selected_version }}
+        state: absent
+      when: selected_version in available_versions
+
+    - name: Créer le fichier de service systemctl pour Node Exporter
+      template:
+        src: ../templates/prometheus/node_exporter.service.j2
+        dest: /usr/lib/systemd/system/node_exporter.service
+      when: selected_version in available_versions
+
+    - name: Refresh/Enable/Start nouveau service
+      become: yes
+      shell: |
+        sudo systemctl daemon-reload
+        sudo systemctl enable node_exporter
+        sudo systemctl restart node_exporter
+      when: selected_version in available_versions
+

@@ -1,0 +1,26 @@
+---
+- name: Copier le script de rappel et planifier la tâche cron
+  hosts: hosts
+  become: yes
+  tasks:
+    - name: Créer le répertoire /opt/back_up/
+      file:
+        path: /opt/back_up/
+        state: directory
+        mode: 0700
+
+    - name: Copier le script de rappel sur le serveur
+      copy:
+        src: ../templates/scripts/back_up_reminder.py.j2
+        dest: /opt/back_up/back_up_reminder.py
+        mode: 0700
+
+    - name: Ajouter une tâche cron pour le rappel
+      cron:
+        name: "Rappel mensuel"
+        minute: 0
+        hour: 12
+        day: 4
+        month: "*"
+        weekday: "*"
+        job: "/usr/bin/python3 /opt/back_up/back_up_reminder.py"

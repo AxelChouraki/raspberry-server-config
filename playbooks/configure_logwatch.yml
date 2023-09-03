@@ -1,0 +1,45 @@
+---
+- name: Installer Logwatch et configurer la tâche cron
+  hosts: hosts
+  become: yes
+  tasks:
+    - name: Installer Logwatch
+      apt:
+        name: logwatch
+        state: present
+
+    - name: Créer le répertoire /var/cache/logwatch
+      file:
+        path: /var/cache/logwatch
+        state: directory
+      become: yes
+
+    - name: Copier logwatch.conf
+      copy:
+        src: /usr/share/logwatch/default.conf/logwatch.conf
+        dest: /etc/logwatch/conf/
+        remote_src: yes
+      become: yes
+
+    - name: Ajouter "Range = All" dans le fichier logwatch.conf
+      lineinfile:
+        path: /etc/logwatch/conf/logwatch.conf
+        regexp: '^Range = '
+        line: 'Range = All'
+      become: yes
+
+    - name: Copier le script Logwatch vers /etc/logwatch/scripts
+      template:
+        src: ../templates/scripts/logwatch_to_discord.py.j2
+        dest: /etc/logwatch/scripts/
+
+    - name: Planifier la tâche cron pour Logwatch
+      cron:
+        name: Exécuter Logwatch tous les 4 du mois à 12h
+        minute: 0
+        hour: 12
+        day: 4
+        month: "*"
+        weekday: "*"
+        job: "/usr/bin/python3 /etc/logwatch/scripts/logwatch_to_discord.py"
+      become: yes

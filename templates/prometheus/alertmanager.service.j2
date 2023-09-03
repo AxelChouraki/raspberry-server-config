@@ -1,0 +1,13 @@
+[Unit]
+Description=Prometheus Alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Type=simple
+ExecStart=/opt/{{ selected_version | replace('.tar.gz', '') }}/alertmanager \
+    --config.file /opt/{{ selected_version | replace('.tar.gz', '') }}/alertmanager.yml
+
+[Install]
+WantedBy=multi-user.target

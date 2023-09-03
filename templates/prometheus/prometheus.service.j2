@@ -1,0 +1,16 @@
+[Unit]
+Description=Prometheus Server
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Type=simple
+ExecStart=/opt/{{ selected_version | replace('.tar.gz', '') }}/prometheus \
+    --config.file /opt/{{ selected_version | replace('.tar.gz', '') }}/prometheus.yml \
+    --storage.tsdb.path /opt/{{ selected_version | replace('.tar.gz', '') }}/data/ \
+    --web.console.templates=/opt/{{ selected_version | replace('.tar.gz', '') }}/consoles \
+    --web.console.libraries=/opt/{{ selected_version | replace('.tar.gz', '') }}/console_libraries
+
+[Install]
+WantedBy=multi-user.target

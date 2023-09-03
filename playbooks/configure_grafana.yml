@@ -1,0 +1,79 @@
+- name: Installer Grafana depuis le référentiel APT
+  hosts: hosts
+  become: yes
+  tasks:
+    - name: Installer les packages requis
+      apt:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - apt-transport-https
+        - software-properties-common
+        - wget
+      become: yes
+
+    - name: Télécharger la clé de signature du référentiel Grafana
+      shell: wget -q -O /usr/share/keyrings/grafana.key https://apt.grafana.com/gpg.key
+      become: yes
+
+    - name: Ajouter le référentiel pour les versions stables
+      shell: echo "deb [signed-by=/usr/share/keyrings/grafana.key] https://apt.grafana.com stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list
+      become: yes
+
+    - name: Mettre à jour la liste des paquets disponibles
+      apt:
+        update_cache: yes
+      become: yes
+
+    - name: Installer Grafana OSS
+      apt:
+        name: grafana
+        state: present
+      become: yes
+
+    - name: Refresh/Enable/Start nouveau service
+      become: yes
+      shell: |
+        sudo systemctl daemon-reload
+        sudo systemctl enable grafana-server
+        sudo systemctl restart grafana-server
+
+    - name: Attendre que le service soit up (1 min)
+      uri:
+        url: "http://127.0.0.1:3000"
+        status_code: 200
+      register: __result
+      until: __result.status == 200
+      retries: 60
+      delay: 1
+
+    - name: Ajouter Prometheus comme datasource
+      grafana_datasource:
+        name: "prometheus-local"
+        grafana_url: "http://127.0.0.1:3000"
+        grafana_user: "admin"
+        grafana_password: "admin"
+        org_id: "1"
+        ds_type: "prometheus"
+        ds_url: "http://127.0.0.1:9090"
+      changed_when: false
+
+    - name: Importer le tableau de bord
+      grafana_dashboard:
+        grafana_url: "http://127.0.0.1:3000"
+        grafana_user: "admin"
+        grafana_password: "admin"
+        state: present
+        dashboard_id: 1860
+      register: dashboard_result
+
+    - name: Afficher la sortie du module
+      debug:
+        var: dashboard_result
+
+    - name: Refresh grafan service après d'ajout du dashboard
+      become: yes
+      shell: |
+        sudo systemctl daemon-reload
+        sudo systemctl enable grafana-server
+        sudo systemctl restart grafana-server

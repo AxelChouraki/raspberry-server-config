@@ -1,0 +1,154 @@
+---
+- name: Configuration SSH
+  hosts: hosts
+  become: yes
+  vars_files: ../vars/main.yml
+
+  tasks:
+    - name: Changer le port SSH à {{ ssh_port }}
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port ' # Search a line that starts with #?Port so either Port or #Port
+        line: 'Port {{ ssh_port }}'  # Changez le numéro de port SSH selon vos besoins
+      notify:
+        - restart ssh
+
+    - name: Configurer le délai d'inactivité
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^(#?)ClientAliveInterval'
+        line: 'ClientAliveInterval {{ ClientAliveInterval }}'
+      notify:
+        - restart ssh
+
+    - name: Configurer le nombre maximal de requêtes ClientAliveInterval sans réponse
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^(#?)ClientAliveCountMax'
+        line: 'ClientAliveCountMax {{ClientAliveCountMax}}'
+      notify:
+        - restart ssh
+
+    - name: Installer Fail2ban
+      apt:
+        name: fail2ban
+      become_user: root
+
+    - name: Configurer Fail2ban
+      template:
+        src: ../templates/fail2ban/jail.local.j2
+        dest: /etc/fail2ban/jail.local
+      become_user: root
+      notify:
+        - restart fail2ban
+
+    - name: Copier la clé publique du user par défaut {{ default_user }} dans authorized_keys
+      authorized_key:
+        user: "{{default_user}}"
+        key: "{{ lookup('file', 'vars/id_rsa.pub') }}"
+        state: present
+
+    - name: Autoriser seulement l'authentification par clé
+      become: yes
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^(#?)PasswordAuthentication'  # Recherche la ligne PasswordAuthentication
+        line: 'PasswordAuthentication no'       # Remplacez par PasswordAuthentication no
+      notify:
+        - restart ssh
+
+    - name: Autoriser l'authentification par clé (PubkeyAuthentication)
+      become: yes
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^(#?)PubkeyAuthentication'  # Recherche la ligne PubkeyAuthentication
+        line: 'PubkeyAuthentication yes'       # Remplacez par PubkeyAuthentication yes
+      notify:
+        - restart ssh
+
+    - name: Modifier les préférences HostKey
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^HostKey '  # Recherche les lignes commençant par HostKey
+        state: absent  # Supprime les lignes existantes correspondantes
+      notify:
+        - restart ssh
+
+    - name: Ajouter de nouvelles entrées HostKey
+      become_user: root
+      blockinfile:
+        path: /etc/ssh/sshd_config
+        marker: "# DÉBUT Configuration HostKey"
+        insertbefore: EOF
+        block: |
+          HostKey /etc/ssh/ssh_host_ed25519_key
+          HostKey /etc/ssh/ssh_host_rsa_key
+      notify:
+        - restart ssh
+
+    - name: Modifier les algorithmes de chiffrement par défaut
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^(#?)KexAlgorithms|Ciphers|MACs'  # Recherche les lignes commençant par KexAlgorithms, Ciphers ou MACs
+        state: absent  # Supprime les lignes existantes correspondantes
+      notify:
+        - restart ssh
+
+    - name: Ajouter de nouveaux algorithmes de clé de diffusion
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?KexAlgorithms '  # Recherche la ligne KexAlgorithms ou #KexAlgorithms (commentée)
+        line: 'KexAlgorithms curve25519-sha256@libssh.org'
+      notify:
+        - restart ssh
+
+    - name: Ajouter de nouveaux algorithmes de chiffrement
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Ciphers|MACs '  # Recherche les lignes Ciphers, MACs ou #Ciphers, #MACs (commentées)
+        line: 'Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr'
+      notify:
+        - restart ssh
+
+    - name: Ajouter de nouveaux MACs
+      become_user: root
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?MACs '  # Recherche les lignes MACs ou #MACs (commentées)
+        line: 'MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com'
+      notify:
+        - restart ssh
+
+    - name: Régénérer les Moduli
+      become_user: root
+      shell: |
+        sudo ssh-keygen -M generate -O bits=2048 moduli-2048.candidates
+        sudo ssh-keygen -M screen -f moduli-2048.candidates moduli-2048
+        sudo cp moduli-2048 /etc/ssh/moduli
+        sudo rm moduli-2048
+      args:
+        executable: /bin/bash
+      notify:
+        - restart ssh
+
+  handlers:
+    - name: restart ssh
+      become_user: root
+      service:
+        name: sshd
+        state: restarted
+
+    - name: restart fail2ban
+      become_user: root
+      service:
+        name: fail2ban
+        state: restarted

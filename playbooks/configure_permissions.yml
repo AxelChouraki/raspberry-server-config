@@ -1,0 +1,13 @@
+---
+- name: Changer les permissions
+  hosts: hosts
+  become: yes  # Pour exécuter en tant que superutilisateur (root)
+
+  tasks:
+    - name: Définir les droits du répertoire /opt en 700
+      file:
+        path: /opt
+        state: directory
+        owner: root
+        group: root
+        mode: '0700'

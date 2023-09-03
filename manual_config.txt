@@ -1,0 +1,550 @@
+	INSTALLATION ---------------------------------------------
+
+Insérer une carte SD
+Télécharger Raspberry PI Imager
+Pour mon serveur : RASPBERRY PI OS LITE (64-BIT)
+Ne pas oublier de set up les options (roue crantée) --> ssh, wifi, ...
+IMPORTANT : LE WI-FI 5Ghz NE FONCTIONNE PAS, J'AI PASSÉ DU TEMPS SUR CETTE CONNERIE --> NE SAIS PAS POURQUOI
+
+Mettre la carte SD sur dans la Raspberry
+Brancher l'alimentation de la Raspberry. signification des LED --> checker internet
+scanner les ports 22 ouverts pour trouver le serveur ssh de la Raspberry : sudo nmap -p 22 192.168.1.42/24
+
+Se connecter sur la box
+Donner une adresse statique au serveur --> il faudra redémarrer la raspberry
+Faire les redirections de port nécessaires
+
+ssh user@ip
+sudo apt update
+sudo apt upgrade --> valider avec "Y"
+
+
+	CREATE /home PARTITION NE FONCTIONNE PAS ATTENTION 
+	CRASH AU REBOOT ----------------------------------------
+
+Run the following command to get information about all disks and partitions on your system:
+sudo fdisk -l
+Install parted 
+sudo apt update
+sudo apt install parted
+Once you've located the disk you want to resize a partition on (e.g. /dev/mmcblk0), open it using parted:
+sudo parted /dev/mmcblk0
+Now use the print command within parted, which will print information about that disk, and the partitions on the disk, so you can figure out how much space you have available to expand the partition into, and the partition number of the partition you want to resize:
+print
+Redimensionner la partition : Utilisez la commande resizepart suivie du numéro de partition que vous souhaitez redimensionner et de la nouvelle taille. Par exemple, pour réduire la deuxième partition de 100 Go, vous pouvez utiliser la commande (on est sur 250Go de stockage) :
+resizepart 2 138G
+Ici, 138G est la nouvelle taille que vous souhaitez attribuer à la partition. Assurez-vous de définir la taille en fonction de vos besoins.
+Créer une nouvelle partition : Utilisez la commande mkpart pour créer une nouvelle partition dans l'espace non alloué résultant de la réduction de la partition précédente. Par exemple, pour créer une nouvelle partition /home, vous pouvez utiliser la commande :
+mkpart primary ext4 138G 238G
+Cette commande crée une nouvelle partition ext4 qui commence à 138 Go et se termine à 238 Go.
+Quitter Parted : Une fois que vous avez effectué les opérations nécessaires, utilisez la commande quit pour quitter Parted.
+Formater la nouvelle partition : Après avoir quitté Parted, formatez la nouvelle partition en utilisant la commande sudo mkfs.ext4 /dev/mmcblk0pX (remplacez X par le numéro de la nouvelle partition).
+We now need to create another home directory on which we will mount our home partition. To avoid confusion, we will rename our current home directory to /home.bak shown.
+sudo mv /home /home.bak
+Next, we will create a new home directory.
+sudo mkdir /home
+mount /dev/mmcblk0pX to the newly created home directory
+sudo mount /dev/mmcblk0p3 /home
+To confirm this, run the df command as shown:
+sudo df -Th
+
+Permanent Partition Mount in Linux
+To automatically ensure that the filesystem is mounted every time upon system startup, we are going to modify the /etc/fstab file. But first, let us get the UUID of the filesystem as follows.
+sudo blkid /dev/mmcblk0p3
+
+/dev/mmcblk0p3: UUID="41121b7e-02b4-4ee3-b5b2-e121987d7c02" BLOCK_SIZE="4096" TYPE="ext4" PARTUUID="452eb67e-03"
+
+Mettez à jour /etc/fstab : Ajoutez une entrée dans le fichier /etc/fstab pour que la nouvelle partition soit montée automatiquement au démarrage. Ajoutez une ligne similaire à celle-ci) :
+PARTUUID=c355925b-03  /home               ext4    defaults,noatime 0       2
+
+Save the changes and close the file. Then run the following command to mount all the partitions.
+sudo mount -a
+
+reboot
+sudo reboot
+
+
+
+	CONFIG SSH --------------------------------------------------
+
+si le lien n'est pas mort : https://medium.com/@jasonrigden/hardening-ssh-1bcb99cd4cef
+sinon, tout est écrit en dessous
+
+	changer le port
+
+sudo nano /etc/ssh/sshd_config
+décommenter #Port 22 et changer le numéro du port, par exemple 2002
+
+	
+	Vérifier que la connexion de root n'est pas autorisé
+
+#PermitRootLogin prohibit-password 
+ça devrait déjà être le cas
+
+
+	Kick AFK 
+
+ClientAliveInterval 600
+ClientAliveCountMax 3
+
+ClientAliveInterval envoie un message au client ssh après x secondes sans activité (0 = jamais). Si le client répond au serveur, la connexion est maintenue.
+ClientAliveCountMax quant à lui, concerne le nombre maximal de requêtes ClientAliveInterval sans réponse que tolérera le serveur avant de fermer la connexion.
+
+
+	Appliquer les modifications
+
+Ctrl + O (save)
+Ctrl + X (quit)
+systemctl restart sshd (apply modifications)
+
+
+	Installer Fail2ban pour éviter les attaques sur le SSH
+
+sudo apt install fail2ban
+On copie ensuite le fichier de configuration de Fail2ban :
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+On édite ensuite ce fichier jail.local
+sudo nano /etc/fail2ban/jail.local
+avoir un truc qui ressemble à ça et sauvegarder:
+	[sshd]
+	enabled = true
+	port = 2222
+	logpath = /var/log/auth.log
+	maxretry = 5
+Redémarrez ensuite le service fail2ban :
+sudo systemctl restart fail2ban
+Vous pourrez consulter les adresses IP bannies avec la commande :
+sudo fail2ban-client status sshd
+Vous pouvez aussi examiner les logs de fail2ban pour voir les actions effectuées :
+tail -f /var/log/fail2ban.log
+
+
+	Autoriser seulement l'authentification par clef
+
+mkdir ~/.ssh
+chmod 700 ~/.ssh
+touch ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+En remplaçant par la bonne ip, sur powershell :
+type $env:USERPROFILE\.ssh\id_rsa.pub | ssh 192.168.1.42 "cat >> .ssh/authorized_keys"
+
+sudo nano /etc/ssh/sshd_config
+mettre:
+	PasswordAuthentication no
+	PubkeyAuthentication yes
+save
+sudo systemctl restart sshd
+
+
+	Double Authentification (pas fait sur mon serv)
+
+Pour une sécurité renforcée:
+We can also user TOTP (Time-Based One-Time Passwords) to harden our SSH security. In this example we will be using Google Authenticator. When we attempt to log into the system we will be challenged to provide a verification code. We will use the Google Authenticator app to generate that code. First we need to install some software.
+sudo apt-get install libpam-google-authenticator
+Then run the initialization
+google-authenticator
+It will ask: Do you want authentication tokens to be time-based (y/n) and we need to say yes. Then it will print out the QR code and ask if want to update our .google_authenticator file. We do.
+Scan that code into the Google Authenticator app and save those emergency codes! You will next be asked a few more question. We will answer them all with yes.
+Edit the PAM rule file /etc/pam.d/sshdadding the follow at the end:
+auth required pam_google_authenticator.so
+Edit the ssh configuration file.
+UsePAM yes
+ChallengeResponseAuthentication yes
+And restart the SSH server. The system will now require a verification code when you log into the server.
+
+
+	Test
+
+On peut se connecter en local avec : ssh -p 2002 axelm@raspberrypi
+Vérifier que l'adresse statique fonctionne : ssh -p 2002 axelm@<ip_statique>
+Vérifier que l'on peut se connecter depuis internet : ssh -p 2002 axelm@<passerelle_ip>
+
+ip de mon routeur : 82.66.185.38
+
+
+	Cosmétique (non appliqué)
+
+MOTD et Banners
+
+
+	SSH Audit
+
+https://github.com/arthepsy/ssh-audit
+suivre les indications de l'audit
+exécuter l'audit sur une console linux pour avoir la coloration syntaxique du rapport (important)
+
+Change Hostkey Preference
+We will be following the advice of stribika, mozilla, and the SSH audit report. We will change our HostKey preferences. Remove the current HosyKey entries in the ssh configuration file. Replace them with the following.
+
+HostKey /etc/ssh/ssh_host_ed25519_key
+HostKey /etc/ssh/ssh_host_rsa_key
+Change Default Ciphers and Algorithms
+Continuing to follow the advice of stribika, mozilla, and the SSH audit report. We change our Key exchange algorithms, symmetric ciphers and, message authentication codes. Add or replace the following to the ssh configuration file.
+
+KexAlgorithms curve25519-sha256@libssh.org
+Ciphers chacha20-poly1305@openssh.com,aes256-gcm@openssh.com,aes128-gcm@openssh.com,aes256-ctr,aes192-ctr,aes128-ctr
+MACs hmac-sha2-512-etm@openssh.com,hmac-sha2-256-etm@openssh.com,umac-128-etm@openssh.com
+
+Regenerate Moduli
+The /etc/ssh/moduli file contains prime numbers and generators used by the SSH server for the Diffie-Hellman key exchange. Your current /etc/ssh/moduli is probably not unique. Generating a new file may harden your server. Generating these file might take awhile.
+Command with the new OpenSSH :
+	sudo ssh-keygen -M generate -O bits=2048 moduli-2048.candidates
+	sudo ssh-keygen -M screen -f moduli-2048.candidates moduli-2048
+	sudo cp moduli-2048 /etc/ssh/moduli
+	sudo rm moduli-2048
+
+Rerun the Audit
+Let us see if our changes made the SSH audit happy.
+
+
+
+	MONITORING SYSTEM -------------------------------------------------
+
+choix : Prometheus / Grafana
+OpenSource, simplicité, charge minimaliste pour les petites unités
+
+Si le site marche : https://www.mytinydc.com/blog/prometheus-grafana-installation/
+https://prometheus.io/docs/prometheus/latest/getting_started/
+sinon :
+
+	Installation Prometheus-node_exporter sur un client
+ici le client et le serveur sont la même entité
+Connectez-vous root à votre serveur client, rendez-vous dans le répertoire /opt:
+
+cd /opt
+et téléchargez l’archive “node_exporter” correspondant à votre plateforme :
+
+Rasberry PI : Operating system : Linux - Architecture : armv7
+Rock64 : Operating system : Linux - Architecture : arm64
+Utilisez la commande wget, exemple pour la version Raspberry PI-0.17 :
+
+wget https://github.com/prometheus/node_exporter/releases/download/v0.17.0/node_exporter-0.17.0.linux-armv7.tar.gz
+Extraire les données de l’archive, exemple pour le téléchargement précédent :
+
+tar xfz node_exporter-0.17.0.linux-armv7.tar.gz
+rm node_exporter-0.17.0.linux-armv7.tar.gz
+cd node_exporter-0.17.0.linux-armv7
+# exécuter l'exporter en mode détaché
+nohup ./node_exporter &
+
+
+	Installation Prometheus serveur
+
+Connectez-vous root au serveur qui sera chargé de collecter les données des différents clients, rendez-vous dans le répertoire /opt:
+	cd /opt
+
+Téléchargez l’archive “Prometheus” correspondant à votre plateforme :
+	Rasberry PI : Operating system : Linux - Architecture : armv7
+	Rock64 : Operating system : Linux - Architecture : arm64
+
+Utilisez la commande wget, exemple pour la version Raspberry PI-0.17 :
+	wget https://github.com/prometheus/prometheus/releases/download/v2.6.0/prometheus-2.6.0.linux-armv7.tar.gz
+
+Extraire les données de l’archive, exemple pour le téléchargement précédent :
+	tar xfz  prometheus-2.6.0.linux-armv7.tar.gz
+	rm  prometheus-2.6.0.linux-armv7.tar.gz
+	cd prometheus-2.6.0.linux-armv7/
+
+Pour faire tourner en arrière plan :
+sudo nohup ./prometheus &
+
+
+	Setup du prometheus serveur et du node exporter as services
+
+sudo nano /usr/lib/systemd/system/prometheus.service
+	[Unit]
+	Description=Prometheus Server
+	Wants=network-online.target
+	After=network-online.target
+
+	[Service]
+	User=root
+	Type=simple
+	ExecStart=/opt/prometheus-2.46.0.linux-armv7/prometheus \
+	    --config.file /opt/prometheus-2.46.0.linux-armv7/prometheus.yml \
+	    --storage.tsdb.path /opt/prometheus-2.46.0.linux-armv7/data/ \
+	    --web.console.templates=/opt/prometheus-2.46.0.linux-armv7/consoles \
+	    --web.console.libraries=/opt/prometheus-2.46.0.linux-armv7/console_libraries
+
+	[Install]
+	WantedBy=multi-user.target
+
+enregistrer
+sudo systemctl daemon-reload
+sudo systemctl start prometheus
+sudo systemctl status prometheus
+ça peut etre une bonne idée de pas utiliser le user root mais un autre avec les bons droits
+
+
+sudo nano /usr/lib/systemd/system/node_exporter.service
+	[Unit]
+	Description=Node Exporter
+	Documentation=https://prometheus.io/docs/guides/node-exporter/
+	Wants=network-online.target
+	After=network-online.target
+
+	[Service]
+	User=root
+	Type=simple
+	Restart=on-failure
+	ExecStart=/opt/node_exporter-1.6.1.linux-armv7/node_exporter
+
+	[Install]
+	WantedBy=multi-user.target
+enregistrer
+sudo systemctl daemon-reload
+sudo systemctl start node_exporter
+sudo systemctl status node_exporter
+
+
+	Installation Grafana
+
+https://grafana.com/tutorials/install-grafana-on-raspberry-pi/
+
+grafana s'installe déjà comme un service, sinon l'exécuter en service peut être utile
+
+ajouter une data source : Prometheus
+Prometheus server URL : http://raspberrypi:9090
+
+Importer un dashbord : ID 1860
+
+Se connecter sur le port 3000
+
+
+	AlertManager (with Discord)
+
+Si la page est toujours up : https://promlabs.com/blog/2022/12/23/sending-prometheus-alerts-to-discord-with-alertmanager-v0-25-0/
+sinon lire la suite
+
+aller dans le répertoire de prometheus et créer un alert.yml
+groups:
+- name: demo-service-alerts
+  rules:
+  - alert: DemoServiceHighErrorRate
+    expr: |
+      (
+        sum without(status, instance) (
+          rate(demo_api_request_duration_seconds_count{status=~"5..",job="demo"}[1m])
+        )
+      /
+        sum without(status, instance) (
+          rate(demo_api_request_duration_seconds_count{job="demo"}[1m])
+        ) * 100 > 0.5
+      )
+    for: 1m
+    labels:
+      severity: critical
+    annotations:
+      title: 'High 5xx rate for {{ $labels.method }} on {{ $labels.path }}'
+      description: 'The 5xx error rate for path {{$labels.path}} with method {{ $labels.method }} in {{ $labels.job }} is {{ printf "%.2f" $value }}%.'
+
+Dans prometheus.yml, ajouter :
+rule_files:
+  - alerts.yml
+
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets: ['localhost:9093']
+
+Créer les alertes souhaitées et relancer le service prometheus. On peut en trouver sur internet.
+Bonne base : https://samber.github.io/awesome-prometheus-alerts/rules.html#host-and-hardware
+Ce qui nous intéresse actuellement :
+- https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/master/dist/rules/prometheus-self-monitoring/embedded-exporter.yml
+- https://raw.githubusercontent.com/samber/awesome-prometheus-alerts/master/dist/rules/host-and-hardware/node-exporter.yml
+
+
+
+Pour la partie dans discord :
+	Créer un channel sur un serveur
+	Edit Channel (la roue crantée)
+	Intégrations
+	Create Webhook
+	CLiquer le nouveau webhook créé avec un nom random
+	le renommer (ex: Alertmanager)
+	copy Webhook URL, ex : https://discord.com/api/webhooks/1144334527376928848/4wEP0lDcsC4FVy7DiromiqXhQd_Oze-m5WzBAH4sPwY2EORHQ6znfZ-1VnwrhEemofJK
+	Save Changes
+
+
+
+Installer l'alertmanager
+
+on se met dans le répertoire opt/ pour installer l'alertmanager avec prometheus / node_exporter (pas obligatoire, c'est pour regrouper et être cohérent)
+on va télécharger la version de l'alertmanager qui convient, soit la dernière version en date 0.26.0 et celle pour rasberry soir armv7:
+sudo wget https://github.com/prometheus/alertmanager/releases/download/v0.26.0/alertmanager-0.26.0.linux-armv7.tar.gz
+sudo tar xvfz alertmanager-0.26.0.linux-armv7.tar.gz
+sudo rm alertmanager-0.26.0.linux-armv7.tar.gz
+
+Set the alertmanager.yml config file to:
+
+route:
+  group_by: ['alertname', 'job']
+
+  group_wait: 30s
+  group_interval: 5m
+  repeat_interval: 3h
+
+  receiver: discord
+
+receivers:
+- name: 'discord'
+  discord_configs:
+  - webhook_url: '<DISCORD_WEBHOOK_URL>'
+
+
+
+	Setup of alertmanager as a service
+
+sudo nano /usr/lib/systemd/system/alertmanager.service
+[Unit]
+Description=Prometheus Alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Type=simple
+ExecStart=/opt/alertmanager-0.26.0.linux-armv7/alertmanager \
+    --config.file /opt/alertmanager-0.26.0.linux-armv7/alertmanager.yml
+
+[Install]
+WantedBy=multi-user.target
+
+enregistrer
+sudo systemctl daemon-reload
+sudo systemctl start alertmanager
+sudo systemctl status alertmanager
+ça peut etre une bonne idée de pas utiliser le user root mais un autre avec les bons droits
+
+
+
+	VIRTUAL MACHINE -------------------------------------------------
+
+Rechercher et télécharger la dernière image de l'OS voulu, ici Raspberry Pi OS 64bits Lite:
+sudo wget https://downloads.raspberrypi.org/raspios_arm64/images/raspios_arm64-2023-05-03/2023-05-03-raspios-bullseye-arm64.img.xz
+
+TODO
+
+
+	Ajouter un user -----------------------------------------
+
+sudo useradd <user>
+sudo passwd <user>
+sudo mkdir /home/<user>
+cd /home/<user>
+sudo mkdir .ssh
+sudo chmod 700 .ssh
+sudo touch .ssh/authorized_keys
+sudo chmod 600 .ssh/authorized_keys
+sudo nano .ssh/authorized_keys
+sudo chown user:user /home/user
+sudo chown user:user /home/user/.ssh
+sudo chown user:user /home/user/.ssh/authorized_keys
+sudo service ssh restart
+
+
+
+	Créer un serveur Minecraft -----------------------------------------
+
+	Créer le serveur
+
+sudo mkdir minecraft-server
+cd minecraft-server
+PRENDRE LA VERSION QU'ON VEUT :
+sudo wget https://piston-data.mojang.com/v1/objects/84194a2f286ef7c14ed7ce0090dba59902951553/server.jar
+sudo java -Xms2G -Xmx4G -jar server.jar nogui
+sudo nano eula.txt
+sudo nano server.properties
+sudo screen 
+sudo java -Xms2G -Xmx4G -jar server.jar nogui
+Pour sortir du screen : Ctrl + A + D
+Sortir du screen
+Récupérer le screen id avec:
+	screen -list
+Pour maintenir le screen ouvert même quand je quitte 
+	screen -r <screen_id>
+
+
+	Optimiser le serveur
+
+Unlock useless chunks
+https://dev.bukkit.org/projects/nospawnchunks
+	cd minecraft-server
+	mkdir plugins
+	cd plugins
+	wget -O NoSpawnChunks.jar https://files.pimylifeup.com/minecraft/NoSpawnChunks.jar
+
+Change server.properties
+sudo nano server.properties
+replace with :
+	view-distance=04
+	max-player=5
+
+
+
+	Gestion des logs -----------------------------------------------------------
+
+Pas de graylog ou ElasticSearch car trop gourmand en ressource pour un petit serveur. J’opte pour Logwatch
+Si le lien suivant est up : logwatch [Wiki ubuntu-fr]
+sinon suivre ceci:
+sudo apt install logwatch
+
+dossier de cache nécessarie à son fonctionnement :
+sudo mkdir /var/cache/logwatch
+
+Pour modifier la configuration par défaut copiez le fichier /usr/share/logwatch/default.conf/logwatch.conf dans /etc/logwatch/conf/ :
+sudo cp /usr/share/logwatch/default.conf/logwatch.conf /etc/logwatch/conf/
+
+Pour modifier la config : 
+sudo nano /etc/logwatch/conf/logwatch.conf
+Pour recevoir le rapport par mail, il faut paramétrer un serveur de mail (pas fait) et ajouter MailTo = <mon email>
+Modifier la range
+Range = All
+
+	BACK UP DES DONNÉES -----------------------------------------------
+
+timeshift ne semble pas fait pour des remote back up (difficile à tar.gz ou à ssh), je vais plutôt utiliser rsnapshot. Mon raisonnement: j'ai déjà une configuration ansible qui me permettra de remettre rapidement mon serveur en route en cas de problème. Les quelques données perdues, (logs, monitoring data, tmp files) ne sont pas si importantes que ça. Les snapshots locales ne me semblent pas intéressantes : je veux pouvoir recréer mon serveur s'il est complètement détruit (des expériences sont faites sur ce serveur). Sauvegarder les /home reste la partie la plus importante pour le moment.
+
+Installer rsnapshot
+sudo apt install rsnapshot
+
+	Quota set up (PAS RECOMMANDÉ A LA RACINE, FAIRE PARTITION /HOME) ------------------------------------------------------
+
+Ce qui serait bien, ce serait bien de mettre des quotas sur une partition /home (pas fait)
+
+Si le lien suivant est up : https://doc.ubuntu-fr.org/quota
+sinon :
+
+Installer quota: 
+sudo apt install quota
+
+Vous devez éditer le fichier /etc/fstab afin d'ajouter usrquota dans les options pour avoir une gestion au niveau utilisateur, et/ou grpquota pour une gestion par groupe.
+sudo nano /etc/fstab
+ajouter “,grpquota,usrquota” dans les options du point de montage concerné.
+
+
+Afin de permettre aux quotas de fonctionner, il faut créer un fichier pour les quotas utilisateur, et un autre pour les quotas de groupe, dans la racine du dossier à protéger. Ici il s'agit de /home.
+Ces 2 fichiers doivent appartenir à l'utilisateur root. aquota.user
+sudo touch /home/aquota.group   #Création du fichier pour le groupe
+sudo touch /home/aquota.user  #Création du fichier pour l'utilisateur
+sudo chmod 600 /home/aquota.*
+
+Une fois ces fichiers créés, il faut remonter la partition :
+sudo mount -o remount /home
+ou bien :
+sudo mount -a 
+
+Il est nécessaire d'initialiser le système de quota via la commande quotacheck. Cette commande va scanner tout le contenu de la partition et reporter dans /quota.* les informations de gestion (espace occupé par les utilisateurs). Il s'agit donc d'une initialisation.
+sudo quotacheck -vgum /
+Alternative : initialiser toutes les partitions qui sont affectées par les quotas dans /etc/fstab :
+sudo quotacheck -vagum
+-m permet d'autoriser quotacheck de scanner des partitions qui sont accessibles en écriture
+-g Scanne les quotas pour les groupes
+-u Scanne les quotas pour les utilisateurs
+-v permet d'afficher l'avance du scan
+-a cible tous les systèmes de fichiers montés
+
+Cette commande est nécessaire pour activer le « monitoring » immédiatement, autrement, la commande edquota retournera toujours la même chose, même après modification du contenu des dossiers soumis aux quotas.
+sudo quotaon -avug
+
+TUTO PAS FINI

@@ -1,0 +1,87 @@
+import subprocess
+
+import requests
+
+# Générez le rapport de Logwatch (ajustez le chemin complet selon votre configuration)
+logwatch_report = subprocess.check_output(["sudo", "/usr/sbin/logwatch"]).decode('utf-8')
+
+# URL du webhook
+webhook_url = "https://discord.com/api/webhooks/1144334527376928848/4wEP0lDcsC4FVy7DiromiqXhQd_Oze-m5WzBAH4sPwY2EORHQ6znfZ-1VnwrhEemofJK"
+
+# Divisez le rapport en messages de moins de 2000 caractères
+message_chunks = [logwatch_report[i:i + 2000] for i in range(0, len(logwatch_report), 2000)]
+
+# Envoyez chaque morceau de message séparément
+for i, chunk in enumerate(message_chunks):
+    payload = {
+        "username": "Rapport de logs (partie {})".format(i + 1),
+        "avatar_url": "https://i.imgur.com/4M34hi2.png",
+        "content": chunk
+    }
+
+    response = requests.post(webhook_url, json=payload)
+
+    # Vérifiez la réponse pour chaque morceau de message
+    if response.status_code in (200, 201, 202, 203, 204):
+        print("Partie {} du rapport envoyée avec succès via le webhook.".format(i + 1))
+    else:
+        print("Échec de l'envoi de la partie {} du rapport. Code de statut : {}".format(i + 1, response.status_code))
+        print(response.text)
+
+# Vous pouvez également ajouter un message indiquant que le rapport complet a été envoyé
+payload = {
+    "username": "Rapport de logs (complet)",
+    "avatar_url": "https://i.imgur.com/4M34hi2.png",
+    "content": "Le rapport complet de Logwatch a été envoyé avec succès via le webhook."
+}
+
+response = requests.post(webhook_url, json=payload)
+
+if response.status_code in (200, 201, 202, 203, 204):
+    print("Rapport complet envoyé avec succès.")
+else:
+    print("Échec de l'envoi du rapport complet. Code de statut : {}".format(response.status_code))
+    print(response.text)
+import subprocess
+import requests
+
+# Générez le rapport de Logwatch (ajustez le chemin complet selon votre configuration)
+logwatch_report = subprocess.check_output(["sudo", "/usr/sbin/logwatch"]).decode('utf-8')
+
+# URL du webhook
+webhook_url = "https://discord.com/api/webhooks/1144334527376928848/4wEP0lDcsC4FVy7DiromiqXhQd_Oze-m5WzBAH4sPwY2EORHQ6znfZ-1VnwrhEemofJK"
+
+# Divisez le rapport en messages de moins de 2000 caractères
+message_chunks = [logwatch_report[i:i + 2000] for i in range(0, len(logwatch_report), 2000)]
+
+# Envoyez chaque morceau de message séparément
+for i, chunk in enumerate(message_chunks):
+    payload = {
+        "username": "Rapport de logs (partie {})".format(i + 1),
+        "avatar_url": "https://i.imgur.com/4M34hi2.png",
+        "content": chunk
+    }
+
+    response = requests.post(webhook_url, json=payload)
+
+    # Vérifiez la réponse pour chaque morceau de message
+    if response.status_code in (200, 201, 202, 203, 204):
+        print("Partie {} du rapport envoyée avec succès via le webhook.".format(i + 1))
+    else:
+        print("Échec de l'envoi de la partie {} du rapport. Code de statut : {}".format(i + 1, response.status_code))
+        print(response.text)
+
+# Vous pouvez également ajouter un message indiquant que le rapport complet a été envoyé
+payload = {
+    "username": "Rapport de logs (complet)",
+    "avatar_url": "https://i.imgur.com/4M34hi2.png",
+    "content": "Le rapport complet de Logwatch a été envoyé avec succès via le webhook."
+}
+
+response = requests.post(webhook_url, json=payload)
+
+if response.status_code in (200, 201, 202, 203, 204):
+    print("Rapport complet envoyé avec succès.")
+else:
+    print("Échec de l'envoi du rapport complet. Code de statut : {}".format(response.status_code))
+    print(response.text)

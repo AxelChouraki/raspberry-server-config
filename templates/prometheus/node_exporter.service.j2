@@ -1,0 +1,14 @@
+[Unit]
+Description=Node Exporter
+Documentation=https://prometheus.io/docs/guides/node-exporter/
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=root
+Type=simple
+Restart=on-failure
+ExecStart=/opt/{{ selected_version | replace('.tar.gz', '') }}/node_exporter
+
+[Install]
+WantedBy=multi-user.target

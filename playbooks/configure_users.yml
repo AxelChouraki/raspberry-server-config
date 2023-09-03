@@ -1,0 +1,77 @@
+---
+- name: Créer des utilisateurs et configurer leurs clés SSH
+  hosts: hosts
+  become: yes
+  vars_files: ../vars/main.yml
+  vars:
+    users_to_create:
+      - username: adam
+        ssh_key: "{{ adam_id_rsa }}"
+        password: "adam"
+        wheel: no
+      - username: wsl
+        ssh_key: "{{ wsl_id_rsa }}"
+        password: "wsl"
+        wheel: no
+      - username: boulot
+        ssh_key: "{{ boulot_id_rsa }}"
+        password: "boulot"
+        wheel: yes
+
+  tasks:
+    - name: Créer les utilisateurs
+      user:
+        name: "{{ item.username }}"
+        state: present
+        shell: /bin/bash
+      with_items: "{{ users_to_create }}"
+
+    - name: Définir le mot de passe pour les utilisateurs
+      user:
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+      with_items: "{{ users_to_create }}"
+      become: yes
+      become_user: root
+
+    - name: Créer un groupe personnalisé par user
+      group:
+        name: "{{ item.username }}"
+      with_items: "{{ users_to_create }}"
+      become: yes  
+
+    - name: Créer les répertoires home et .ssh pour les utilisateurs
+      file:
+        path: "/home/{{ item.username }}/.ssh"
+        state: directory
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: "0700"
+      with_items: "{{ users_to_create }}"
+
+    - name: Ajouter les clés SSH autorisées pour les utilisateurs
+      lineinfile:
+        path: "/home/{{ item.username }}/.ssh/authorized_keys"
+        line: "{{ item.ssh_key }}"
+        create: yes
+        owner: "{{ item.username }}"
+        group: "{{ item.username }}"
+        mode: "0600"
+      with_items: "{{ users_to_create }}"
+      become: yes
+
+    - name: Gérer l'appartenance au groupe "wheel"
+      user:
+        name: "{{ item.username }}"
+        groups: "wheel"
+        state: "{{ 'present' if item.wheel == 'yes' else 'absent' }}"
+      with_items: "{{ users_to_create }}"
+      become: yes
+      become_user: root
+
+    - name: Restreindre la commande su pour les non-wheel
+      lineinfile:
+        path: /etc/pam.d/su
+        line: "auth required pam_wheel.so"
+      become: yes
+      become_user: root
