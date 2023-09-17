@@ -58,14 +58,16 @@
         dest: /opt/{{ selected_version | replace('.tar.gz', '') }}/prometheus.yml
 
     - name: Copier un fichier de règles de self-monitoring prometheus
-      template:
-        src: ../templates/prometheus/embedded-exporter.yml.j2
+      copy:
+        src: ../templates/prometheus/embedded-exporter.yml
         dest: /opt/{{ selected_version | replace('.tar.gz', '') }}/embedded-exporter.yml
 
+
     - name: Copier un fichier de règles de monitoring host and hardware
-      template:
-        src: ../templates/prometheus/node-exporter.yml.j2
+      copy:
+        src: ../templates/prometheus/node-exporter.yml
         dest: /opt/{{ selected_version | replace('.tar.gz', '') }}/node-exporter.yml
+
 
     - name: Créer le fichier de service systemd Prometheus
       template:

@@ -17,6 +17,7 @@ playbooks=(
     "configure_logwatch.yml"
     "configure_back_up.yml"
     "configure_permissions.yml"
+    "configure_miscellaneous_install.yml"
 )
 
 # Boucle à travers la liste des playbooks et les exécute un par un

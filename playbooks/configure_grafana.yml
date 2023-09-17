@@ -1,6 +1,7 @@
 - name: Installer Grafana depuis le référentiel APT
   hosts: hosts
   become: yes
+  vars_files: ../vars/main.yml
   tasks:
     - name: Installer les packages requis
       apt:
@@ -58,14 +59,25 @@
         ds_url: "http://127.0.0.1:9090"
       changed_when: false
 
-    - name: Importer le tableau de bord
-      grafana_dashboard:
-        grafana_url: "http://127.0.0.1:3000"
-        grafana_user: "admin"
-        grafana_password: "admin"
-        state: present
-        dashboard_id: 1860
-      register: dashboard_result
+    - name: Télécharger le tableau de bord Grafana
+      get_url:
+        url: "{{ grafana_dashboard_url }}"
+        dest: "/tmp/dashboard.json"
+
+    - name: Modifier le fichier JSON du tableau de bord
+      replace:
+        path: "/tmp/dashboard.json"
+        regexp: '"datasource": "your_datasource_name"'
+        replace: '"datasource": "prometheus-local"'
+
+    - name: Importer le tableau de bord dans Grafana
+      command: >
+        grafana-cli admin dashboard import /tmp/dashboard.json
+
+    - name: Supprimer le fichier temporaire
+      file:
+        path: "/tmp/dashboard.json"
+        state: absent
 
     - name: Afficher la sortie du module
       debug:

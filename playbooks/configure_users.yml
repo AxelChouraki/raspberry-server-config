@@ -1,6 +1,7 @@
 ---
-- name: Créer des utilisateurs et configurer leurs clés SSH
+- name: Créer des utilisateurs, configurer leurs clés SSH et définir les limites de ressources
   hosts: hosts
+  gather_facts: false
   become: yes
   vars_files: ../vars/main.yml
   vars:
@@ -8,46 +9,38 @@
       - username: adam
         ssh_key: "{{ adam_id_rsa }}"
         password: "adam"
-        wheel: no
+        wheel: "no"
+        cpu_limit: "50%"  # Limite de 50% du CPU pour l'utilisateur 'adam'
+        memory_limit: 2G  # Limite de 2 Go de RAM pour l'utilisateur 'adam'
       - username: wsl
         ssh_key: "{{ wsl_id_rsa }}"
         password: "wsl"
-        wheel: no
+        wheel: "no"
       - username: boulot
         ssh_key: "{{ boulot_id_rsa }}"
         password: "boulot"
-        wheel: yes
+        wheel: "yes"
 
   tasks:
-    - name: Créer les utilisateurs
-      user:
-        name: "{{ item.username }}"
-        state: present
-        shell: /bin/bash
-      with_items: "{{ users_to_create }}"
-
-    - name: Définir le mot de passe pour les utilisateurs
-      user:
-        name: "{{ item.username }}"
-        password: "{{ item.password | password_hash('sha512') }}"
-      with_items: "{{ users_to_create }}"
-      become: yes
-      become_user: root
-
     - name: Créer un groupe personnalisé par user
       group:
         name: "{{ item.username }}"
-      with_items: "{{ users_to_create }}"
-      become: yes  
+      loop: "{{ users_to_create }}"
 
-    - name: Créer les répertoires home et .ssh pour les utilisateurs
-      file:
-        path: "/home/{{ item.username }}/.ssh"
-        state: directory
-        owner: "{{ item.username }}"
+    - name: Créer les utilisateurs
+      user:
+        name: "{{ item.username }}"
+        password: "{{ item.password | password_hash('sha512') }}"
+        state: present
+        shell: /bin/bash
         group: "{{ item.username }}"
-        mode: "0700"
-      with_items: "{{ users_to_create }}"
+        home: "/home/{{ item.username }}"
+      loop: "{{ users_to_create }}"
+      register: __user
+
+    - name: Debug user
+      debug:
+        var: __user
 
     - name: Ajouter les clés SSH autorisées pour les utilisateurs
       lineinfile:
@@ -57,21 +50,23 @@
         owner: "{{ item.username }}"
         group: "{{ item.username }}"
         mode: "0600"
-      with_items: "{{ users_to_create }}"
-      become: yes
+      loop: "{{ users_to_create }}"
+
+    - name: Créer le groupe wheel
+      group:
+        name: wheel
+        state: present
 
     - name: Gérer l'appartenance au groupe "wheel"
       user:
         name: "{{ item.username }}"
         groups: "wheel"
-        state: "{{ 'present' if item.wheel == 'yes' else 'absent' }}"
-      with_items: "{{ users_to_create }}"
-      become: yes
-      become_user: root
+      loop: "{{ users_to_create }}"
+      when: item.wheel == "yes"
 
-    - name: Restreindre la commande su pour les non-wheel
-      lineinfile:
-        path: /etc/pam.d/su
-        line: "auth required pam_wheel.so"
-      become: yes
-      become_user: root
+    - name: Ajouter l'utilisateur par défaut aux groupes "wheel" et "sudo"
+      user:
+        name: "{{ default_user }}"
+        groups: "wheel,sudo"
+
+

@@ -48,7 +48,7 @@
     - name: Copier la clé publique du user par défaut {{ default_user }} dans authorized_keys
       authorized_key:
         user: "{{default_user}}"
-        key: "{{ lookup('file', 'vars/id_rsa.pub') }}"
+        key: "{{ lookup('file', '../vars/id_rsa.pub') }}"
         state: present
 
     - name: Autoriser seulement l'authentification par clé

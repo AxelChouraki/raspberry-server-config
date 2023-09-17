@@ -11,3 +11,33 @@
         owner: root
         group: root
         mode: '0700'
+
+    - name: Change owner and permissions for stress
+      file:
+        path: /usr/local/bin/stress
+        owner: root
+        group: wheel
+        mode: '0750'
+      become_method: sudo
+
+    - name: Change owner and permissions for cpulimit
+      file:
+        path: /usr/local/bin/cpulimit
+        owner: root
+        group: wheel
+        mode: '0750'
+      become_method: sudo
+
+    - name: Add or modify lines in limits.conf
+      lineinfile:
+        path: /etc/security/limits.conf
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+      with_items:
+        - { regexp: '^[\*]\s+hard\s+nice\s+-19', line: '* hard nice -19' }
+        - { regexp: '^[\*]\s+hard\s+nice\s+-20', line: '* hard nice -20' }
+        - { regexp: '^[\*]\s+hard\s+nofile', line: '* hard nofile 65535' }
+        - { regexp: '^[\*]\s+soft\s+nofile', line: '* soft nofile 8192' }
+        - { regexp: '^[\*]\s+hard\s+nproc', line: '* hard nproc 2048' }
+        - { regexp: '^root\s+hard\s+nproc', line: 'root hard nproc 65536' }
+        - { regexp: '^[\*]\s+soft\s+priority', line: '* soft priority 0' }
