@@ -1,0 +1,28 @@
+---
+- name: Déployer nftables firewall
+  hosts: all
+  become: yes
+
+  tasks:
+    - name: Installer nftables
+      apt:
+        name: nftables
+        state: present
+        update_cache: yes
+
+    - name: Déployer le fichier de configuration nftables
+      template:
+        src: ../templates/firewall/nftables.conf.j2
+        dest: /etc/nftables.conf
+        owner: root
+        group: root
+        mode: '0644'
+
+    - name: Activer la configuration nftables
+      command: nft -f /etc/nftables.conf
+
+    - name: Activer nftables au démarrage
+      systemd:
+        name: nftables
+        enabled: yes
+        state: started

@@ -638,3 +638,18 @@ Cette commande est nécessaire pour activer le « monitoring » immédiatement, 
 sudo quotaon -avug
 
 TUTO PAS FINI
+
+
+	INITIALISATION D'UNE RPI AVEC UN NVME --------------------------------------------------
+
+Brancher le nvme
+préparer une clef USB ou sd card bootable avec l'OS voulue
+boot sur la clef avec l'environnment desktop si possible (ce sera plus simple)
+vérifier que le nvme est bien branché et reconnu avec lsblk
+vérifier qu'on est bien connecté à internet
+Si on a l'environnement desktop
+	Lancer Raspberry pi Imager et flasher l'OS voulu sur le nvme
+Sinon (pas testé)
+	sudo apt update
+	sudo apt install rpi-imager
+	sudo rpi-imager

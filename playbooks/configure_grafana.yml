@@ -59,30 +59,6 @@
         ds_url: "http://127.0.0.1:9090"
       changed_when: false
 
-    - name: Télécharger le tableau de bord Grafana
-      get_url:
-        url: "{{ grafana_dashboard_url }}"
-        dest: "/tmp/dashboard.json"
-
-    - name: Modifier le fichier JSON du tableau de bord
-      replace:
-        path: "/tmp/dashboard.json"
-        regexp: '"datasource": "your_datasource_name"'
-        replace: '"datasource": "prometheus-local"'
-
-    - name: Importer le tableau de bord dans Grafana
-      command: >
-        grafana-cli admin dashboard import /tmp/dashboard.json
-
-    - name: Supprimer le fichier temporaire
-      file:
-        path: "/tmp/dashboard.json"
-        state: absent
-
-    - name: Afficher la sortie du module
-      debug:
-        var: dashboard_result
-
     - name: Refresh grafan service après d'ajout du dashboard
       become: yes
       shell: |

@@ -1,0 +1,81 @@
+#!/usr/sbin/nft -f
+
+# Vider les règles existantes
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        # Autoriser les connexions établies et les paquets liés
+        ct state established,related accept
+
+        # Autoriser le trafic local (loopback)
+        iif lo accept
+
+        # Autoriser SSH sur le port 2002
+        tcp dport 2002 accept
+
+        # Autoriser le serveur Minecraft
+        tcp dport 25565 accept
+
+        # Autoriser les requêtes DNS (UDP et TCP sur port 53)
+        udp dport 53 accept
+        tcp dport 53 accept
+
+        # Autoriser WHOIS (port 43)
+        tcp dport 43 accept
+
+        # Autoriser mDNS (UDP sur port 5353)
+        udp dport 5353 accept
+
+        # Autoriser Prometheus (port 9090)
+        tcp dport 9090 accept
+
+        # Autoriser Grafana (port 3000)
+        tcp dport 3000 accept
+
+        # Autoriser Alertmanager (port 9093)
+        tcp dport 9093 accept
+
+        # Autoriser Node exporter Prometheus (port 9100)
+        tcp dport 9100 accept
+
+        # Autoriser uniquement les connexions entrantes vers le port 8000 provenant des IP Cloudflare
+        ip saddr {
+            192.168.1.24,
+            173.245.48.0/20,
+            103.21.244.0/22,
+            103.22.200.0/22,
+            103.31.4.0/22,
+            141.101.64.0/18,
+            108.162.192.0/18,
+            190.93.240.0/20,
+            188.114.96.0/20,
+            197.234.240.0/22,
+            198.41.128.0/17,
+            162.158.0.0/15,
+            104.16.0.0/13,
+            172.64.0.0/13,
+            131.0.72.0/22
+        } tcp dport 8000 accept
+
+        ip6 saddr {
+            2400:cb00::/32,
+            2606:4700::/32,
+            2803:f800::/32,
+            2405:b500::/32,
+            2405:8100::/32,
+            2a06:98c0::/29,
+            2c0f:f248::/32
+        } tcp dport 8000 accept
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+}

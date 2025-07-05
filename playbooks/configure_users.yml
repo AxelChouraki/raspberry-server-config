@@ -4,23 +4,6 @@
   gather_facts: false
   become: yes
   vars_files: ../vars/main.yml
-  vars:
-    users_to_create:
-      - username: adam
-        ssh_key: "{{ adam_id_rsa }}"
-        password: "adam"
-        wheel: "no"
-        cpu_limit: "50%"  # Limite de 50% du CPU pour l'utilisateur 'adam'
-        memory_limit: 2G  # Limite de 2 Go de RAM pour l'utilisateur 'adam'
-      - username: wsl
-        ssh_key: "{{ wsl_id_rsa }}"
-        password: "wsl"
-        wheel: "no"
-      - username: boulot
-        ssh_key: "{{ boulot_id_rsa }}"
-        password: "boulot"
-        wheel: "yes"
-
   tasks:
     - name: Créer un groupe personnalisé par user
       group:

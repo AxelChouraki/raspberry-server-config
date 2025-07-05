@@ -2,7 +2,7 @@ ssh_port: "2002"
 ClientAliveInterval: "600"
 ClientAliveCountMax: "3"
 max_retry: "5"
-default_user: "axelm"
+default_user: "sramy"
 prometheus_architecture: "linux-armv7"
 grafana_dashboard_url: "https://grafana.com/api/dashboards/1860/revisions/32/download"
 discord_webhook_url: "https://discord.com/api/webhooks/1144334527376928848/4wEP0lDcsC4FVy7DiromiqXhQd_Oze-m5WzBAH4sPwY2EORHQ6znfZ-1VnwrhEemofJK"
@@ -12,6 +12,7 @@ packages_to_install:
   - wget
   - stress
   - cpulimit
+  - unrar
 axelm_id_rsa: |
     ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDFMUwj/BRZbcmNBe/sMFITRe5K0woAX8dlWH6xp+lFDUM/V8IGU2WaYpb3lXc7WyK5ZO/Jecd9LqUYt1xWcqEReCrnMN94aXlv7VTE0vmtR73rVW3dFBhbT4hKaxdYEFkLzwWUKACyGB6+O3hIk4JESHw58rmguffZdQ/vF/55Mm5ZaGpV+1MrQA1LPWKElCQrGHcIlEpsoR0WhzErEch3ic4OOTbx6BiBg8NHoV8kH5cKQj9S+i5OQQmyDWWkk+QrpzmwDH28Nr8KlYjYl497B5DoHFnY2Gf3NFPXmTo7gFtN+VSOFjOn9HP3Qvh36S+AbQ//+EkYSlDQMpTwp0PjK6725BtEKmtXM4HwS4qT66XhhYaqCWWHLEYl49hxwmdgn3qWBQWgiAC7q8o5pxAB/3Cx3QBJDwJ+zXux+IvDULiaujhU4GFNsKCw+MutnF4JG1FM0d3vNgKeV5VtBl1fQsN83RXNedGQfdffwpEen8Ay8/YdFQXHqSrbCf18n5k= axelm@DESKTOP-GN6F0IU
 wsl_id_rsa: |
@@ -19,4 +20,23 @@ wsl_id_rsa: |
 adam_id_rsa: |
     ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDaFrL7kTqPCTNupRV0TafmO+iWM9tDoUqw4Q8doCLKaw0qibqqSA24YT9b4cBu43NqjY3ws6au5hxZHskCZ59J2Gy14X9wYcSloy1Nr8HPkYjRxeXjbMCkqAQOZopSz9f1OYOX++nUHUa4iXMxYYqCTle53noD4Ue662pA5U0XDWuX53hrSrGozHuFPOyzi3XZS0SRmD4BUeFa/6VAh3gSLQ4oEkisyR91vei9k4TF3bGEyjiKAkLofb0RseYKHDk7Ukohpm4cR02FZV9L15kx7kYNfVfmXs5POhj+qti5MndWNjpd/+fou4oHq0OUyCePCU29JCt+7IHnbpBCm60JACx39KGMgPSujHkxYfxPVQILQNoxZM9Btzd64fzQsDPCKW4YH/lCbsGmsBkEsVgRe+dhzLrv8eyl+reVJzCkHjzA4jkId1udc4GSGotXkvPgLYPzcpR0E9nj7Ze2gn4BjionoM9oWw/NBt+yTGG8EIuucjPnrUw6QeTwvRNui6M= adamchevalier@MacBook-Pro-de-Adam.local
 boulot_id_rsa: |
-    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDc/HZKTlUC7VmZBzXA7ZXIUKVeN0fI31aHUc+KpTPKgOvFx4TdJ1AxUIJHDURgHgUICaCrd3Mzfwb90CPZwYo2UxLbidWStS0kj+I5DeF59V5gwB6bz8pySfub1dYQ0Mc58j4VHr0oxxuTskxYo0qDzb5kFIUfpnYMuf+jVqFuDlSA5w033xrcyGlMwjecA3GZppINCcPViJVnHj0zcVBymVuaLwifw8FG9tIooE+6B64YShVRq8WqY2ojaEKPih+sdcj3Kluu9IX7erHYfBTgrz7TXibU5knRz8Z+1maJDbI9uKu4YbtsiENb33MA6j9YBCrcHp06xeeRw6ZK0cbpHL4IPtRQX3tcr7L7LWIOG3dJ116nuDa4gSI985/uZqw2FY7RZBOUJbC53D8ce+JgKou+s3B2nQtN95HXicOtTZlCPfEwl2Ne6U6mvFK8o5+I2L1MD02qd/T6DmLGKz/OMb50ge2fVGwN4Pimxn2isfIPh/hDN1P7mPBipVlDrSE= vincic-hld\axel.chouraki@HP5CG1324XYD
+    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDVtJz/DDEGF/0pdgYSnAp4Ki9l+7kBwN8xNBGXNfRUPhvmvYRzG9bwk28c2IPpwyL1oTf3z/vJvVFDNGacybPBZvsfqow9wGpI4vju8GqH0jJflRRmUCf5ZL6Ljeqydla0mUZAeccMx1/Ch+C6WiLzDIl7PnKnLfmWpQpNpxX0aeoTObF0ebFhXivDnn6R8H3RspExkwCIUH0V1OCWFckbR0nOUtF6cRNAWd83EIL8ylVMzRnIhbdu3FHq66zwZbZcFC6PAYrrO840F5sX6GarI2jZKHImeKRSLh3vTIJBoBE8I402KMVAFh2pNMuFVwOEJEpO9/INEJ3N3vrkwheoNHg8RfgMpbk2kAw+mLFhiBFpidyzZZVS+zZ4iq5/rgETPBrZ/8rP+X+oZ6iggQAwsJSgaf9UHHrEqCyqPBEZpk4WdAy/12eEgjRfRq47kApslnRzxpQCOZjTERa8A/d0tyS7c7hix2ngSeEc+0bLNlkdSgPgcr/4uOSKK5v6xesQN5Y/7k3/3dkmFtZetU1eOaUCCyvHc35Ou8XuF3zJ1DE1nfsZMywlyVm+jPyTNPrjdEAnMlXMEezNjDIXdqNkk9ezqgKplX5kle86rwrD2P0PH6ay4eI/9oM8kIOyCRSGuSDvgIucbsF2AFcr3S7BtWJMoZTOUacnFzYqKPjrUw== vincic-hld\axel.chouraki@HLD5CG1324XYD
+users_to_create:
+  - username: adam
+    ssh_key: "{{ adam_id_rsa }}"
+    password: "adam"
+    wheel: "no"
+    cpu_limit: "50%"  # Limite de 50% du CPU pour l'utilisateur 'adam'
+    memory_limit: 2G  # Limite de 2 Go de RAM pour l'utilisateur 'adam'
+  - username: wsl
+    ssh_key: "{{ wsl_id_rsa }}"
+    password: "wsl"
+    wheel: "no"
+  - username: boulot
+    ssh_key: "{{ boulot_id_rsa }}"
+    password: "boulot"
+    wheel: "yes"
+  - username: axelm
+    ssh_key: "{{ axelm_id_rsa }}"
+    password: "axelm"
+    wheel: "yes"

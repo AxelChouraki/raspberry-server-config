@@ -18,6 +18,8 @@ playbooks=(
     "configure_back_up.yml"
     "configure_permissions.yml"
     "configure_miscellaneous_install.yml"
+    "configure_ssh.yml"
+    "configure_firewall.yml"
 )
 
 # Boucle à travers la liste des playbooks et les exécute un par un

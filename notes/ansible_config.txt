@@ -5,15 +5,20 @@ sudo apt install software-properties-common
 sudo apt-add-repository --yes --update ppa:ansible/ansible
 sudo apt install ansible
 
-	Configurer les cibles
+	Récupérer la configuration
+git clone ?
+or
+sudo rsync -r /mnt/c/Users/sramy/OneDrive/Documents/GitHub/raspberry-server-config/* /etc/ansible
+
+	Configurer les cibles si ce n'est pas déjà fait
 ajouter à /etc/ansible/hosts la ligne :
-192.168.1.42 ansible_user=axelm
+192.168.1.42 ansible_user=sramy
 vérifier que l'host a bien été pris en compte :
 ansible all --list-hosts
 
 	Test de connexion
 Si besoin de password:
-	ansible all -m ping -u axelm -k
+	ansible all -m ping -o StrictHostKeyChecking=no -u sramy -k 
 sinon:
 	ansible all -m ping
 Pour run un seul playbook : 
@@ -23,4 +28,8 @@ ansible-playbook /etc/ansible/playbooks/configure_grafana.yml -k
 
 ATTENTION : ANSIBLE CONFIGURER POUR UTILISER SYSTEMCTL ET NON SYSTEMD
 Télécharger le dossier ansible
+commentez les lignes non voulues dans run_playbooks.sh
 ./run_playbooks.sh
+
+	SI PROBLEME DE CHECK SSH KEY
+-o StrictHostKeyChecking=no

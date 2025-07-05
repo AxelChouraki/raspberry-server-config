@@ -10,11 +10,11 @@
         state: directory
         owner: root
         group: root
-        mode: '0700'
+        mode: '0775'
 
     - name: Change owner and permissions for stress
       file:
-        path: /usr/local/bin/stress
+        path: /usr/bin/stress
         owner: root
         group: wheel
         mode: '0750'
@@ -22,7 +22,7 @@
 
     - name: Change owner and permissions for cpulimit
       file:
-        path: /usr/local/bin/cpulimit
+        path: /usr/bin/cpulimit
         owner: root
         group: wheel
         mode: '0750'
@@ -41,3 +41,9 @@
         - { regexp: '^[\*]\s+hard\s+nproc', line: '* hard nproc 2048' }
         - { regexp: '^root\s+hard\s+nproc', line: 'root hard nproc 65536' }
         - { regexp: '^[\*]\s+soft\s+priority', line: '* soft priority 0' }
+
+    - name: Décommenter la ligne dans le fichier
+      lineinfile:
+        path: /etc/pam.d/su
+        regexp: '^\s*#?\s*auth\s+required\s+pam_wheel\.so'
+        line: 'auth required pam_wheel.so'
