@@ -1,3 +1,2 @@
 [hosts]
-rpi1 ansible_user=sramy
-rpi2 ansible_user=sramy
+192.168.1.46 ansible_port=2002 ansible_user=sramy

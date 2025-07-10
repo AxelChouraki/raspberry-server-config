@@ -13,30 +13,22 @@ packages_to_install:
   - stress
   - cpulimit
   - unrar
-axelm_id_rsa: |
+sramy_rsa: |
     ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDFMUwj/BRZbcmNBe/sMFITRe5K0woAX8dlWH6xp+lFDUM/V8IGU2WaYpb3lXc7WyK5ZO/Jecd9LqUYt1xWcqEReCrnMN94aXlv7VTE0vmtR73rVW3dFBhbT4hKaxdYEFkLzwWUKACyGB6+O3hIk4JESHw58rmguffZdQ/vF/55Mm5ZaGpV+1MrQA1LPWKElCQrGHcIlEpsoR0WhzErEch3ic4OOTbx6BiBg8NHoV8kH5cKQj9S+i5OQQmyDWWkk+QrpzmwDH28Nr8KlYjYl497B5DoHFnY2Gf3NFPXmTo7gFtN+VSOFjOn9HP3Qvh36S+AbQ//+EkYSlDQMpTwp0PjK6725BtEKmtXM4HwS4qT66XhhYaqCWWHLEYl49hxwmdgn3qWBQWgiAC7q8o5pxAB/3Cx3QBJDwJ+zXux+IvDULiaujhU4GFNsKCw+MutnF4JG1FM0d3vNgKeV5VtBl1fQsN83RXNedGQfdffwpEen8Ay8/YdFQXHqSrbCf18n5k= axelm@DESKTOP-GN6F0IU
 wsl_id_rsa: |
     ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDFTRHZ6Moosz4H4pnUt4TKGqIH6mDV1a2tEiSeRm7W3l5uG4yDpNwbhlBKg47IX6LIuH8b+JSQlj0REODjwE6xqWRJXLmEygkMl9uVEkRwNtSmR+lfSUUfgf4W1LLSFW/MUYfN0DZS8DBwSNWGcNN81tmy0VN41IT7AZ0NlTpBLYzVrv4mwReauItQSc6cXzl2KfKnOHaQNzUeMmdNQaX9KYF4p5Nr5jg6kGmWjRVK/cw0A9XNDiuvnHa1cc2ymAc2DBVXNcX3AkOlBSbDOFdouhA29x3XICkpS7O9Ou7wLTGqRCuAQzC+3hPM6FRsBL+bxXechXF1L7nNkQOKWx1JX3t56dvxZnL86+r90rZWrdaPdT422e0o2j6scu1zOGSS9lQrv/EGYlG1lWqvT7ga3CxIXIeikiqa8FCi33jA9+Ddd75tcZzsGQ4IM7yd12vdKOFgDz0psspVjaf4aMxzX/Mcm2VzqUZP3XCRPZbyvGpg0upUNbFKUZpIZZylAxmJZh39tphDDEyCQ//LrxDgbXhSQRXjzkhNbd7U8V9G1Tw+9ILRHFJcAxkev9oP3fCZnRz4Zl76D6f1HtSHlWZ2lVhoayX1Lj1c41A1n1WltKDzNb0piotwFIFyCTevy218aINBI5XmlYYCufvaXa4zfWdbPBgOXdBAnYPFvQpAeQ== axelm@DESKTOP-GN6F0IU
-adam_id_rsa: |
-    ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDaFrL7kTqPCTNupRV0TafmO+iWM9tDoUqw4Q8doCLKaw0qibqqSA24YT9b4cBu43NqjY3ws6au5hxZHskCZ59J2Gy14X9wYcSloy1Nr8HPkYjRxeXjbMCkqAQOZopSz9f1OYOX++nUHUa4iXMxYYqCTle53noD4Ue662pA5U0XDWuX53hrSrGozHuFPOyzi3XZS0SRmD4BUeFa/6VAh3gSLQ4oEkisyR91vei9k4TF3bGEyjiKAkLofb0RseYKHDk7Ukohpm4cR02FZV9L15kx7kYNfVfmXs5POhj+qti5MndWNjpd/+fou4oHq0OUyCePCU29JCt+7IHnbpBCm60JACx39KGMgPSujHkxYfxPVQILQNoxZM9Btzd64fzQsDPCKW4YH/lCbsGmsBkEsVgRe+dhzLrv8eyl+reVJzCkHjzA4jkId1udc4GSGotXkvPgLYPzcpR0E9nj7Ze2gn4BjionoM9oWw/NBt+yTGG8EIuucjPnrUw6QeTwvRNui6M= adamchevalier@MacBook-Pro-de-Adam.local
 boulot_id_rsa: |
     ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQDVtJz/DDEGF/0pdgYSnAp4Ki9l+7kBwN8xNBGXNfRUPhvmvYRzG9bwk28c2IPpwyL1oTf3z/vJvVFDNGacybPBZvsfqow9wGpI4vju8GqH0jJflRRmUCf5ZL6Ljeqydla0mUZAeccMx1/Ch+C6WiLzDIl7PnKnLfmWpQpNpxX0aeoTObF0ebFhXivDnn6R8H3RspExkwCIUH0V1OCWFckbR0nOUtF6cRNAWd83EIL8ylVMzRnIhbdu3FHq66zwZbZcFC6PAYrrO840F5sX6GarI2jZKHImeKRSLh3vTIJBoBE8I402KMVAFh2pNMuFVwOEJEpO9/INEJ3N3vrkwheoNHg8RfgMpbk2kAw+mLFhiBFpidyzZZVS+zZ4iq5/rgETPBrZ/8rP+X+oZ6iggQAwsJSgaf9UHHrEqCyqPBEZpk4WdAy/12eEgjRfRq47kApslnRzxpQCOZjTERa8A/d0tyS7c7hix2ngSeEc+0bLNlkdSgPgcr/4uOSKK5v6xesQN5Y/7k3/3dkmFtZetU1eOaUCCyvHc35Ou8XuF3zJ1DE1nfsZMywlyVm+jPyTNPrjdEAnMlXMEezNjDIXdqNkk9ezqgKplX5kle86rwrD2P0PH6ay4eI/9oM8kIOyCRSGuSDvgIucbsF2AFcr3S7BtWJMoZTOUacnFzYqKPjrUw== vincic-hld\axel.chouraki@HLD5CG1324XYD
 users_to_create:
-  - username: adam
-    ssh_key: "{{ adam_id_rsa }}"
-    password: "adam"
-    wheel: "no"
-    cpu_limit: "50%"  # Limite de 50% du CPU pour l'utilisateur 'adam'
-    memory_limit: 2G  # Limite de 2 Go de RAM pour l'utilisateur 'adam'
   - username: wsl
     ssh_key: "{{ wsl_id_rsa }}"
-    password: "wsl"
+    password: "$6$rounds=656000$4RHIa1uNnpi4qERP$D.ivbcNMmi.5J4SF5Zof8fNHGt/iUA0Qs7jVx3KZNwo3ur4z5IDrBJBl9G6pQPzlg4NBDinJirsBmeewb4.5X."
     wheel: "no"
   - username: boulot
     ssh_key: "{{ boulot_id_rsa }}"
-    password: "boulot"
+    password: "$6$rounds=656000$ulW7ARs.EuMN4RZo$gtxKf0kowE5jueUXyYj5omXoTFag5ijw01P9LcynWy60B3DKUw6ns4cSSj7KOX60Qr1iWN9WmjfByDNgzbQmr."
     wheel: "yes"
-  - username: axelm
-    ssh_key: "{{ axelm_id_rsa }}"
-    password: "axelm"
+  - username: sramy
+    ssh_key: "{{ sramy_rsa }}"
+    password: "$6$rounds=656000$OBknsNuKwUNNUMVG$Mxj8Oa3WPp6wtRmNIxjAq1bB7VtbCa6Q8alQKmweoQ4JmGprOwBwcPFS3KWu.nTQeT8wIBOhazEZqfWUxTy3Z/"
     wheel: "yes"

@@ -13,7 +13,7 @@
     - name: Créer les utilisateurs
       user:
         name: "{{ item.username }}"
-        password: "{{ item.password | password_hash('sha512') }}"
+        password: "{{ item.password }}"
         state: present
         shell: /bin/bash
         group: "{{ item.username }}"
@@ -51,5 +51,9 @@
       user:
         name: "{{ default_user }}"
         groups: "wheel,sudo"
+
+    - name: Forcer le changement de mot de passe à la première connexion
+      command: chage -d 0 {{ item.username }}
+      loop: "{{ users_to_create }}"
 
 

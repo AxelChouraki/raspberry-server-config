@@ -18,18 +18,22 @@ ansible all --list-hosts
 
 	Test de connexion
 Si besoin de password:
-	ansible all -m ping -o StrictHostKeyChecking=no -u sramy -k 
+	ansible all -m ping -u sramy -k --ssh-common-args='-o StrictHostKeyChecking=no'
 sinon:
 	ansible all -m ping
 Pour run un seul playbook : 
-ansible-playbook /etc/ansible/playbooks/configure_grafana.yml -k
+ansible-playbook /etc/ansible/playbooks/configure_miscellaneous_install.yml -k
 
 	Lancer 
 
 ATTENTION : ANSIBLE CONFIGURER POUR UTILISER SYSTEMCTL ET NON SYSTEMD
 Télécharger le dossier ansible
 commentez les lignes non voulues dans run_playbooks.sh
-./run_playbooks.sh
+Vérifier le port (22 pour un premier run, 2002 sinon) et les hosts dans le fichier hosts
+sudo ./run_playbooks.sh
 
 	SI PROBLEME DE CHECK SSH KEY
 -o StrictHostKeyChecking=no
+
+	SI PROBLEME DE SSH CONFIGURÉ
+changer le port dans hosts
