@@ -9,6 +9,7 @@ log_file="ansible.log"
 
 # Liste des noms de fichiers de playbook à exécuter dans l'ordre souhaité
 playbooks=(
+    "configure_miscellaneous_install.yml"
     "configure_users.yml"
     "configure_node_exporter.yml"
     "configure_grafana.yml"
@@ -17,7 +18,6 @@ playbooks=(
     "configure_logwatch.yml"
     "configure_back_up.yml"
     "configure_permissions.yml"
-    "configure_miscellaneous_install.yml"
     "configure_ssh.yml"
     "configure_firewall.yml"
 )
