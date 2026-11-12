@@ -1,0 +1,27 @@
+# {{ ansible_managed }}
+[Unit]
+Description=Prometheus Alertmanager
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User={{ alertmanager_user }}
+Group={{ alertmanager_user }}
+Type=simple
+Restart=on-failure
+ExecStart=/usr/local/bin/alertmanager \
+    --config.file={{ alertmanager_config_dir }}/alertmanager.yml \
+    --storage.path={{ alertmanager_data_dir }} \
+    --web.listen-address={{ alertmanager_listen_address }} \
+    --cluster.listen-address=0.0.0.0:{{ alertmanager_cluster_port }}
+{%- for host in groups.get(alertmanager_cluster_group, []) if host != inventory_hostname %} \
+    --cluster.peer={{ hostvars[host].ansible_host | default(host) }}:{{ alertmanager_cluster_port }}
+{%- endfor %}
+
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths={{ alertmanager_data_dir }}
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,29 @@
+---
+- name: Installer les dépendances du script
+  ansible.builtin.apt:
+    name: python3-requests
+    state: present
+
+- name: Créer le dossier du script
+  ansible.builtin.file:
+    path: "{{ backup_reminder_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: "0700"
+
+- name: Déployer le script de rappel
+  ansible.builtin.template:
+    src: back_up_reminder.py.j2
+    dest: "{{ backup_reminder_dir }}/back_up_reminder.py"
+    owner: root
+    group: root
+    mode: "0700" # contient le webhook Discord
+
+- name: Planifier le rappel
+  ansible.builtin.cron:
+    name: Rappel mensuel
+    minute: "{{ backup_reminder_cron_minute }}"
+    hour: "{{ backup_reminder_cron_hour }}"
+    day: "{{ backup_reminder_cron_day }}"
+    job: "/usr/bin/python3 {{ backup_reminder_dir }}/back_up_reminder.py"

@@ -1,0 +1,23 @@
+---
+prometheus_version: latest
+prometheus_user: prometheus
+prometheus_config_dir: /etc/prometheus
+prometheus_data_dir: /var/lib/prometheus
+prometheus_listen_address: "0.0.0.0:9090"
+prometheus_scrape_interval: 15s
+prometheus_evaluation_interval: 15s
+# Rétention : la première limite atteinte l'emporte. Dimensionner pour que la
+# base ne remplisse jamais le disque (carte SD de rpi1 !).
+prometheus_retention_time: 30d
+prometheus_retention_size: 5GB
+
+# Surveillance mutuelle : chaque Prometheus scrape TOUS les hôtes de ce groupe
+# (node_exporter, prometheus, alertmanager), lui-même compris. Si un hôte
+# tombe, l'autre le voit (alerte "up == 0") et prévient via Discord.
+prometheus_monitoring_group: monitoring
+prometheus_node_exporter_port: 9100
+prometheus_port: 9090
+prometheus_alertmanager_port: 9093
+
+# Jobs supplémentaires, au format scrape_configs de Prometheus.
+prometheus_extra_scrape_configs: []

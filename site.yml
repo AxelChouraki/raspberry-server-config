@@ -1,0 +1,44 @@
+---
+# Point d'entrée unique.
+#   ansible-playbook site.yml                      # tout, sur tous les hôtes
+#   ansible-playbook site.yml --limit rpi2         # un seul hôte
+#   ansible-playbook site.yml --tags ssh,firewall  # quelques rôles seulement
+# Voir docs/ansible.md.
+
+- name: Socle commun
+  hosts: servers
+  become: true
+  pre_tasks:
+    - name: Vérifier que les secrets du vault sont chargés
+      ansible.builtin.assert:
+        that:
+          - vault_discord_webhook_url is defined
+          - vault_grafana_admin_password is defined
+          - vault_user_passwords is defined
+        fail_msg: >-
+          Secrets introuvables : créer group_vars/all/vault.yml à partir de
+          vault.example.yml (voir docs/ansible.md).
+        quiet: true
+      tags: [always]
+  roles:
+    - { role: common, tags: [common] }
+    - { role: users, tags: [users] }
+    - { role: hardening, tags: [hardening] }
+    - { role: ssh, tags: [ssh] }
+    - { role: firewall, tags: [firewall] }
+    - { role: logwatch, tags: [logwatch] }
+    - { role: backup, tags: [backup] }
+
+- name: Monitoring (chaque hôte surveille les autres)
+  hosts: monitoring
+  become: true
+  roles:
+    - { role: node_exporter, tags: [monitoring, node_exporter] }
+    - { role: alertmanager, tags: [monitoring, alertmanager] }
+    - { role: prometheus, tags: [monitoring, prometheus] }
+
+- name: Tableaux de bord
+  hosts: grafana
+  become: true
+  roles:
+    - { role: grafana, tags: [monitoring, grafana] }

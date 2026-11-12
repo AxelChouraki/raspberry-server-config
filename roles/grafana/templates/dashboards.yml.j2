@@ -1,0 +1,9 @@
+# {{ ansible_managed }}
+apiVersion: 1
+providers:
+  - name: local
+    type: file
+    disableDeletion: false
+    allowUiUpdates: true
+    options:
+      path: {{ grafana_dashboards_dir }}

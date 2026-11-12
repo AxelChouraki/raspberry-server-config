@@ -1,0 +1,10 @@
+---
+common_packages:
+  - apt-transport-https
+  - wget
+  - curl
+  - stress
+  - cpulimit
+  - python3-requests # scripts Discord (logwatch, rappel de sauvegarde)
+# Mises à jour de sécurité automatiques (unattended-upgrades).
+common_unattended_upgrades: true

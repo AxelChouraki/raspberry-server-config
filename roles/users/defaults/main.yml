@@ -1,0 +1,11 @@
+---
+# Utilisateur d'administration existant (créé par Raspberry Pi Imager).
+default_user: pi
+# Groupe autorisé à utiliser `su` (voir rôle hardening) et les outils de stress.
+users_admin_group: wheel
+# Liste des comptes à créer :
+#   - username: alice
+#     wheel: true                 # membre du groupe d'administration
+#     password: "<hash sha-512>"  # appliqué à la création uniquement
+#     ssh_keys: ["ssh-ed25519 AAAA... alice@pc"]
+users_list: []

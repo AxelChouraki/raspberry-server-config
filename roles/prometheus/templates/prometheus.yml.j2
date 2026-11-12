@@ -1,0 +1,37 @@
+# {{ ansible_managed }}
+{% macro targets(port) %}
+{% for host in groups.get(prometheus_monitoring_group, [inventory_hostname]) %}
+      - targets: ['{{ 'localhost' if host == inventory_hostname else (hostvars[host].ansible_host | default(host)) }}:{{ port | string }}']
+        labels:
+          instance: '{{ host }}'
+{% endfor %}
+{% endmacro %}
+global:
+  scrape_interval: {{ prometheus_scrape_interval }}
+  evaluation_interval: {{ prometheus_evaluation_interval }}
+
+rule_files:
+  - '{{ prometheus_config_dir }}/rules/*.yml'
+
+# Les alertes partent vers tous les Alertmanager du groupe : ils sont en
+# cluster et dédoublonnent les notifications.
+alerting:
+  alertmanagers:
+    - static_configs:
+{% for host in groups.get(prometheus_monitoring_group, [inventory_hostname]) %}
+        - targets: ['{{ 'localhost' if host == inventory_hostname else (hostvars[host].ansible_host | default(host)) }}:{{ prometheus_alertmanager_port }}']
+{% endfor %}
+
+scrape_configs:
+  - job_name: prometheus
+    static_configs:
+{{ targets(prometheus_port) }}
+  - job_name: node
+    static_configs:
+{{ targets(prometheus_node_exporter_port) }}
+  - job_name: alertmanager
+    static_configs:
+{{ targets(prometheus_alertmanager_port) }}
+{% if prometheus_extra_scrape_configs %}
+{{ prometheus_extra_scrape_configs | to_nice_yaml(indent=2) | indent(2, true) }}
+{% endif %}

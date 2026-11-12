@@ -1,0 +1,41 @@
+---
+- name: Fixer les droits de /opt
+  ansible.builtin.file:
+    path: /opt
+    state: directory
+    owner: root
+    group: root
+    mode: "0755"
+
+- name: Vérifier la présence des binaires à restreindre
+  ansible.builtin.stat:
+    path: "{{ item }}"
+  loop: "{{ hardening_restricted_binaries }}"
+  register: hardening_binaries
+
+- name: Réserver certains binaires au groupe d'administration
+  ansible.builtin.file:
+    path: "{{ item.item }}"
+    owner: root
+    group: "{{ hardening_admin_group }}"
+    mode: "0750"
+  loop: "{{ hardening_binaries.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.stat.exists
+
+- name: Déployer les limites de ressources
+  ansible.builtin.template:
+    src: limits.conf.j2
+    dest: /etc/security/limits.d/90-server.conf
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Réserver su au groupe d'administration
+  ansible.builtin.lineinfile:
+    path: /etc/pam.d/su
+    regexp: '^\s*#?\s*auth\s+required\s+pam_wheel\.so'
+    line: "auth       required   pam_wheel.so group={{ hardening_admin_group }}"
+    insertafter: '^auth\s+sufficient\s+pam_rootok\.so'
+  when: hardening_restrict_su

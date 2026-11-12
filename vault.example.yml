@@ -1,0 +1,18 @@
+---
+# Modèle du fichier de secrets. NE PAS mettre de vraies valeurs ici.
+#
+#   cp vault.example.yml group_vars/all/vault.yml
+#   # renseigner les valeurs, puis :
+#   ansible-vault encrypt group_vars/all/vault.yml
+#
+# vault.yml est ignoré par git : en garder une copie hors du dépôt.
+
+vault_discord_webhook_url: "https://discord.com/api/webhooks/<ID>/<TOKEN>"
+
+vault_grafana_admin_password: "changez-moi"
+
+# Hash SHA-512 générés avec : mkpasswd --method=sha-512
+vault_user_passwords:
+  wsl: "$6$..."
+  boulot: "$6$..."
+  sramy: "$6$..."

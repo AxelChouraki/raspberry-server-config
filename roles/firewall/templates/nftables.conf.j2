@@ -1,0 +1,80 @@
+#!/usr/sbin/nft -f
+# {{ ansible_managed }}
+{% set peers = [] %}
+{% for host in groups.get(firewall_monitoring_group, []) if host != inventory_hostname %}
+{% set _ = peers.append(hostvars[host].ansible_host | default(host)) %}
+{% endfor %}
+{% set trusted4 = firewall_trusted_sources | reject('search', ':') | list %}
+{% set trusted6 = firewall_trusted_sources | select('search', ':') | list %}
+{% set ssh4 = firewall_ssh_sources | reject('search', ':') | list %}
+{% set ssh6 = firewall_ssh_sources | select('search', ':') | list %}
+{% set trusted_ports = (firewall_trusted_tcp_ports + firewall_cloudflare_tcp_ports) | unique %}
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        ct state established,related accept
+        ct state invalid drop
+        iif lo accept
+
+        # ICMP : ping, et indispensable au fonctionnement d'IPv6 (NDP, PMTU)
+        meta l4proto icmp accept
+        meta l4proto ipv6-icmp accept
+
+        # SSH
+{% if not firewall_ssh_sources %}
+        tcp dport {{ ssh_port }} accept
+{% endif %}
+{% if ssh4 %}
+        ip saddr { {{ ssh4 | join(', ') }} } tcp dport {{ ssh_port }} accept
+{% endif %}
+{% if ssh6 %}
+        ip6 saddr { {{ ssh6 | join(', ') }} } tcp dport {{ ssh_port }} accept
+{% endif %}
+{% if firewall_public_tcp_ports %}
+
+        # Ports publics (TCP)
+        tcp dport { {{ firewall_public_tcp_ports | join(', ') }} } accept
+{% endif %}
+{% if firewall_public_udp_ports %}
+
+        # Ports publics (UDP)
+        udp dport { {{ firewall_public_udp_ports | join(', ') }} } accept
+{% endif %}
+{% if trusted_ports and trusted4 %}
+
+        # Réseaux de confiance (IPv4)
+        ip saddr { {{ trusted4 | join(', ') }} } tcp dport { {{ trusted_ports | join(', ') }} } accept
+{% endif %}
+{% if trusted_ports and trusted6 %}
+
+        # Réseaux de confiance (IPv6)
+        ip6 saddr { {{ trusted6 | join(', ') }} } tcp dport { {{ trusted_ports | join(', ') }} } accept
+{% endif %}
+{% if peers and firewall_monitoring_tcp_ports %}
+
+        # Surveillance mutuelle (groupe {{ firewall_monitoring_group }})
+        ip saddr { {{ peers | join(', ') }} } tcp dport { {{ firewall_monitoring_tcp_ports | join(', ') }} } accept
+{% endif %}
+{% if peers and firewall_monitoring_udp_ports %}
+        ip saddr { {{ peers | join(', ') }} } udp dport { {{ firewall_monitoring_udp_ports | join(', ') }} } accept
+{% endif %}
+{% if firewall_cloudflare_tcp_ports %}
+
+        # Cloudflare uniquement
+        ip saddr { {{ firewall_cloudflare_ipv4 | join(', ') }} } tcp dport { {{ firewall_cloudflare_tcp_ports | join(', ') }} } accept
+        ip6 saddr { {{ firewall_cloudflare_ipv6 | join(', ') }} } tcp dport { {{ firewall_cloudflare_tcp_ports | join(', ') }} } accept
+{% endif %}
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+    }
+
+    chain output {
+        type filter hook output priority 0; policy accept;
+    }
+}

@@ -1,0 +1,17 @@
+---
+hardening_admin_group: wheel
+# Binaires réservés au groupe d'administration (root:wheel 0750).
+hardening_restricted_binaries:
+  - /usr/bin/stress
+  - /usr/bin/cpulimit
+# Limites de ressources, déployées dans /etc/security/limits.d/.
+hardening_limits:
+  - { domain: "*", type: hard, item: nice, value: -19 } # seul root peut descendre à -20
+  - { domain: root, type: hard, item: nice, value: -20 }
+  - { domain: "*", type: soft, item: nofile, value: 8192 }
+  - { domain: "*", type: hard, item: nofile, value: 65535 }
+  - { domain: "*", type: hard, item: nproc, value: 2048 } # anti fork-bomb
+  - { domain: root, type: hard, item: nproc, value: 65536 }
+  - { domain: "*", type: soft, item: priority, value: 0 }
+# Réserver `su` aux membres du groupe d'administration (pam_wheel).
+hardening_restrict_su: true

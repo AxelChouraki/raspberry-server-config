@@ -1,0 +1,58 @@
+---
+- name: Créer le groupe d'administration
+  ansible.builtin.group:
+    name: "{{ users_admin_group }}"
+    state: present
+
+- name: Créer un groupe par utilisateur
+  ansible.builtin.group:
+    name: "{{ item.username }}"
+    state: present
+  loop: "{{ users_list }}"
+  loop_control:
+    label: "{{ item.username }}"
+
+- name: Créer les utilisateurs
+  ansible.builtin.user:
+    name: "{{ item.username }}"
+    group: "{{ item.username }}"
+    groups: "{{ [users_admin_group] if item.wheel | default(false) | bool else [] }}"
+    append: true
+    shell: /bin/bash
+    home: "/home/{{ item.username }}"
+    password: "{{ item.password }}"
+    update_password: on_create
+    state: present
+  loop: "{{ users_list }}"
+  loop_control:
+    label: "{{ item.username }}"
+  register: users_created
+  no_log: true
+
+# Uniquement pour les comptes qui viennent d'être créés : l'ancien playbook
+# faisait expirer le mot de passe de tout le monde à chaque exécution.
+- name: Forcer le changement de mot de passe à la première connexion
+  ansible.builtin.command: chage -d 0 {{ item.item.username }}
+  loop: "{{ users_created.results }}"
+  loop_control:
+    label: "{{ item.item.username }}"
+  when:
+    - item.changed
+    - item.item.username != default_user
+    - item.item.username != (ansible_user | default(''))
+  changed_when: true
+
+- name: Installer les clés SSH autorisées
+  ansible.posix.authorized_key:
+    user: "{{ item.0.username }}"
+    key: "{{ item.1 }}"
+    state: present
+  loop: "{{ users_list | subelements('ssh_keys', skip_missing=True) }}"
+  loop_control:
+    label: "{{ item.0.username }}"
+
+- name: Ajouter l'utilisateur par défaut aux groupes d'administration
+  ansible.builtin.user:
+    name: "{{ default_user }}"
+    groups: ["{{ users_admin_group }}", sudo]
+    append: true

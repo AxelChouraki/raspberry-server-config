@@ -1,0 +1,13 @@
+---
+- name: Reload nftables
+  ansible.builtin.command: /usr/sbin/nft -f /etc/nftables.conf
+  changed_when: true
+  notify: Restart fail2ban after nftables
+
+# `flush ruleset` efface aussi les tables de Fail2ban : on le relance pour
+# qu'il réinstalle ses bannissements.
+- name: Restart fail2ban after nftables
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: restarted
+  failed_when: false

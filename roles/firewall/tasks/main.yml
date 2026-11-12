@@ -1,0 +1,21 @@
+---
+- name: Installer nftables
+  ansible.builtin.apt:
+    name: nftables
+    state: present
+
+- name: Déployer la configuration nftables
+  ansible.builtin.template:
+    src: nftables.conf.j2
+    dest: /etc/nftables.conf
+    owner: root
+    group: root
+    mode: "0644"
+    validate: /usr/sbin/nft -c -f %s
+  notify: Reload nftables
+
+- name: Activer nftables au démarrage
+  ansible.builtin.systemd:
+    name: nftables
+    enabled: true
+    state: started

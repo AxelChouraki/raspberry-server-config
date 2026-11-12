@@ -1,0 +1,11 @@
+---
+# Pour l'instant ce rôle ne fait qu'un RAPPEL mensuel sur Discord : aucune
+# sauvegarde n'est réellement effectuée (voir docs/architecture.md, § Sauvegardes).
+discord_webhook_url: ""
+backup_reminder_dir: /opt/back_up
+backup_reminder_message: >-
+  N'oublie pas de faire un back up de ton /home !
+  Commande : rsync -av /home/ utilisateur@serveur_sauvegarde:/chemin/vers/sauvegarde/
+backup_reminder_cron_day: "4"
+backup_reminder_cron_hour: "12"
+backup_reminder_cron_minute: "0"

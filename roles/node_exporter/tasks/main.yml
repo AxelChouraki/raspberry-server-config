@@ -1,0 +1,36 @@
+---
+- name: Créer l'utilisateur système node_exporter
+  ansible.builtin.user:
+    name: "{{ node_exporter_user }}"
+    system: true
+    shell: /usr/sbin/nologin
+    create_home: false
+
+- name: Installer le binaire node_exporter
+  ansible.builtin.include_role:
+    name: prometheus_binary
+  vars:
+    prometheus_binary_repo: node_exporter
+    prometheus_binary_version: "{{ node_exporter_version }}"
+    prometheus_binary_notify: Restart node_exporter
+
+- name: Supprimer l'ancienne unité systemd (ancien playbook)
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system/node_exporter.service
+    state: absent
+
+- name: Déployer le service node_exporter
+  ansible.builtin.template:
+    src: node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+    owner: root
+    group: root
+    mode: "0644"
+  notify: Restart node_exporter
+
+- name: Activer et démarrer node_exporter
+  ansible.builtin.systemd:
+    name: node_exporter
+    enabled: true
+    state: started
+    daemon_reload: true

@@ -1,0 +1,39 @@
+---
+- name: "Récupérer la dernière version publiée ({{ prometheus_binary_repo }})"
+  ansible.builtin.uri:
+    url: "https://api.github.com/repos/prometheus/{{ prometheus_binary_repo }}/releases/latest"
+    return_content: true
+  register: prometheus_binary_release
+  when: prometheus_binary_version == 'latest'
+  check_mode: false
+
+- name: "Calculer la version et les chemins ({{ prometheus_binary_repo }})"
+  ansible.builtin.set_fact:
+    prometheus_binary_resolved: >-
+      {{ (prometheus_binary_release.json.tag_name | regex_replace('^v', ''))
+         if prometheus_binary_version == 'latest' else prometheus_binary_version }}
+    prometheus_binary_arch: "{{ prometheus_binary_arch_map[ansible_architecture] }}"
+
+- name: "Calculer le dossier d'installation ({{ prometheus_binary_repo }})"
+  ansible.builtin.set_fact:
+    prometheus_binary_dir: >-
+      {{ prometheus_binary_install_root }}/{{ prometheus_binary_repo }}-{{ prometheus_binary_resolved }}.linux-{{ prometheus_binary_arch }}
+
+- name: "Télécharger et extraire {{ prometheus_binary_repo }} {{ prometheus_binary_resolved }}"
+  ansible.builtin.unarchive:
+    src: >-
+      https://github.com/prometheus/{{ prometheus_binary_repo }}/releases/download/v{{ prometheus_binary_resolved }}/{{ prometheus_binary_repo }}-{{ prometheus_binary_resolved }}.linux-{{ prometheus_binary_arch }}.tar.gz
+    dest: "{{ prometheus_binary_install_root }}"
+    remote_src: true
+    owner: root
+    group: root
+    creates: "{{ prometheus_binary_dir }}/{{ prometheus_binary_files | first }}"
+
+- name: "Lier les binaires dans /usr/local/bin ({{ prometheus_binary_repo }})"
+  ansible.builtin.file:
+    src: "{{ prometheus_binary_dir }}/{{ item }}"
+    dest: "/usr/local/bin/{{ item }}"
+    state: link
+    force: true
+  loop: "{{ prometheus_binary_files }}"
+  notify: "{{ prometheus_binary_notify }}"

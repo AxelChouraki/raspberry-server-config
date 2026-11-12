@@ -1,0 +1,5 @@
+# {{ ansible_managed }}
+#<domain>  <type>  <item>  <value>
+{% for l in hardening_limits %}
+{{ l.domain }}  {{ l.type }}  {{ l.item }}  {{ l.value }}
+{% endfor %}

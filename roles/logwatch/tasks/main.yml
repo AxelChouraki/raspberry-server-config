@@ -1,0 +1,48 @@
+---
+- name: Installer Logwatch
+  ansible.builtin.apt:
+    name:
+      - logwatch
+      - python3-requests
+    state: present
+
+- name: Créer le dossier de cache
+  ansible.builtin.file:
+    path: /var/cache/logwatch
+    state: directory
+    mode: "0755"
+
+- name: Copier la configuration par défaut
+  ansible.builtin.copy:
+    src: /usr/share/logwatch/default.conf/logwatch.conf
+    dest: /etc/logwatch/conf/logwatch.conf
+    remote_src: true
+    force: false
+    mode: "0644"
+
+- name: Régler la période couverte par le rapport
+  ansible.builtin.lineinfile:
+    path: /etc/logwatch/conf/logwatch.conf
+    regexp: '^Range\s*='
+    line: "Range = {{ logwatch_range }}"
+
+- name: Déployer le script d'envoi vers Discord
+  ansible.builtin.template:
+    src: logwatch_to_discord.py.j2
+    dest: "{{ logwatch_script_path }}"
+    owner: root
+    group: root
+    mode: "0700" # contient le webhook Discord
+
+- name: Planifier le rapport
+  ansible.builtin.cron:
+    name: Rapport Logwatch vers Discord
+    minute: "{{ logwatch_cron_minute }}"
+    hour: "{{ logwatch_cron_hour }}"
+    day: "{{ logwatch_cron_day }}"
+    job: "/usr/bin/python3 {{ logwatch_script_path }}"
+
+- name: Supprimer l'ancienne entrée cron (ancien playbook)
+  ansible.builtin.cron:
+    name: Exécuter Logwatch tous les 4 du mois à 12h
+    state: absent

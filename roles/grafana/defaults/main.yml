@@ -1,0 +1,13 @@
+---
+# Mot de passe du compte admin (secret : à définir dans le vault).
+# Appliqué par Grafana à l'initialisation de sa base uniquement ; sur une
+# instance existante : grafana-cli admin reset-admin-password '<mdp>'
+grafana_admin_password: ""
+grafana_http_port: 3000
+grafana_prometheus_url: "http://127.0.0.1:9090"
+grafana_datasource_uid: prometheus-local
+grafana_dashboards_dir: /var/lib/grafana/dashboards
+# Tableaux de bord téléchargés depuis grafana.com.
+grafana_dashboards:
+  - name: node-exporter-full
+    url: https://grafana.com/api/dashboards/1860/revisions/32/download

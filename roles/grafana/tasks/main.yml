@@ -1,0 +1,101 @@
+---
+- name: Créer le dossier des clés APT
+  ansible.builtin.file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: "0755"
+
+- name: Télécharger la clé de signature du dépôt Grafana
+  ansible.builtin.get_url:
+    url: https://apt.grafana.com/gpg.key
+    dest: /etc/apt/keyrings/grafana.asc
+    owner: root
+    group: root
+    mode: "0644"
+
+- name: Déclarer le dépôt APT Grafana
+  ansible.builtin.copy:
+    dest: /etc/apt/sources.list.d/grafana.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/grafana.asc] https://apt.grafana.com stable main
+    owner: root
+    group: root
+    mode: "0644"
+  register: grafana_repo
+
+- name: Installer Grafana OSS
+  ansible.builtin.apt:
+    name: grafana
+    state: present
+    update_cache: "{{ grafana_repo is changed }}"
+
+- name: Définir le port et le mot de passe admin
+  ansible.builtin.lineinfile:
+    path: /etc/default/grafana-server
+    regexp: "^{{ item.key }}="
+    line: "{{ item.key }}={{ item.value }}"
+    owner: root
+    group: grafana
+    mode: "0640"
+  loop:
+    - { key: GF_SERVER_HTTP_PORT, value: "{{ grafana_http_port }}" }
+    - { key: GF_SECURITY_ADMIN_PASSWORD, value: "{{ grafana_admin_password }}" }
+  loop_control:
+    label: "{{ item.key }}"
+  no_log: true
+  notify: Restart grafana
+
+- name: Provisionner la source de données Prometheus
+  ansible.builtin.template:
+    src: datasource.yml.j2
+    dest: /etc/grafana/provisioning/datasources/prometheus.yml
+    owner: root
+    group: grafana
+    mode: "0640"
+  notify: Restart grafana
+
+- name: Créer le dossier des tableaux de bord
+  ansible.builtin.file:
+    path: "{{ grafana_dashboards_dir }}"
+    state: directory
+    owner: grafana
+    group: grafana
+    mode: "0755"
+
+- name: Provisionner le chargement des tableaux de bord
+  ansible.builtin.template:
+    src: dashboards.yml.j2
+    dest: /etc/grafana/provisioning/dashboards/local.yml
+    owner: root
+    group: grafana
+    mode: "0640"
+  notify: Restart grafana
+
+- name: Télécharger les tableaux de bord
+  ansible.builtin.get_url:
+    url: "{{ item.url }}"
+    dest: "{{ grafana_dashboards_dir }}/{{ item.name }}.json"
+    owner: grafana
+    group: grafana
+    mode: "0644"
+  loop: "{{ grafana_dashboards }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+# Les exports grafana.com référencent parfois la source par un placeholder
+# d'import (${DS_PROMETHEUS}) que le provisioning par fichier ne résout pas.
+- name: Pointer les tableaux de bord vers la source provisionnée
+  ansible.builtin.replace:
+    path: "{{ grafana_dashboards_dir }}/{{ item.name }}.json"
+    regexp: '\$\{DS_PROMETHEUS\}'
+    replace: "{{ grafana_datasource_uid }}"
+  loop: "{{ grafana_dashboards }}"
+  loop_control:
+    label: "{{ item.name }}"
+
+- name: Activer et démarrer Grafana
+  ansible.builtin.systemd:
+    name: grafana-server
+    enabled: true
+    state: started
+    daemon_reload: true

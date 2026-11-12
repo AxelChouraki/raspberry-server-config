@@ -1,0 +1,35 @@
+---
+# Variables propres à ce parc. Chaque rôle documente ses valeurs par défaut
+# dans roles/<role>/defaults/main.yml ; on ne surcharge ici que le nécessaire.
+
+default_user: sramy
+
+# --- SSH -------------------------------------------------------------------
+ssh_port: 2002
+
+# --- Pare-feu --------------------------------------------------------------
+# Réseaux de confiance : accès à Grafana / Prometheus / Alertmanager.
+# À remplacer par le VLAN de gestion + le sous-réseau WireGuard une fois
+# l'architecture cible en place (voir docs/architecture.md).
+firewall_trusted_sources:
+  - 192.168.1.0/24
+# Qui peut joindre SSH. Liste vide = tout le monde (comportement historique).
+firewall_ssh_sources: []
+# Ports ouverts à tous.
+firewall_public_tcp_ports:
+  - 25565 # serveur Minecraft
+# Ports joignables uniquement depuis les IP Cloudflare (+ réseaux de confiance).
+# Inutile avec un Cloudflare Tunnel (connexion sortante) : vider la liste.
+firewall_cloudflare_tcp_ports:
+  - 8000
+
+# --- Monitoring ------------------------------------------------------------
+# Version "latest" = dernière release GitHub au moment du run.
+# Épingler (ex. "3.5.0") pour des déploiements reproductibles.
+prometheus_version: latest
+alertmanager_version: latest
+node_exporter_version: latest
+
+# --- Secrets (définis dans vault.yml, chiffré avec ansible-vault) ------------
+discord_webhook_url: "{{ vault_discord_webhook_url }}"
+grafana_admin_password: "{{ vault_grafana_admin_password }}"

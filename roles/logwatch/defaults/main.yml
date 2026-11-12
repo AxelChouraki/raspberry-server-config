@@ -1,0 +1,9 @@
+---
+# URL du webhook Discord (secret : à définir dans le vault).
+discord_webhook_url: ""
+logwatch_range: All
+# Rapport mensuel : le 4 à 12h00.
+logwatch_cron_day: "4"
+logwatch_cron_hour: "12"
+logwatch_cron_minute: "0"
+logwatch_script_path: /etc/logwatch/scripts/logwatch_to_discord.py

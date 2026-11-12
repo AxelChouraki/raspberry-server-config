@@ -1,0 +1,20 @@
+---
+# Rôle utilitaire : installe un binaire publié par le projet Prometheus
+# (prometheus, alertmanager, node_exporter...) depuis les releases GitHub.
+# Appelé par les autres rôles via include_role, jamais directement.
+#
+# Paramètres attendus :
+#   prometheus_binary_repo     : dépôt GitHub sous prometheus/ (ex. node_exporter)
+#   prometheus_binary_version  : "latest" ou une version épinglée (ex. "1.9.1")
+#   prometheus_binary_files    : binaires à lier dans /usr/local/bin
+#   prometheus_binary_notify   : handler à notifier si le binaire change
+prometheus_binary_version: latest
+prometheus_binary_files: ["{{ prometheus_binary_repo }}"]
+prometheus_binary_notify: []
+prometheus_binary_install_root: /opt
+# Architecture des archives, déduite de la machine (un Pi 5 en 64 bits = arm64).
+prometheus_binary_arch_map:
+  aarch64: arm64
+  armv7l: armv7
+  armv6l: armv6
+  x86_64: amd64

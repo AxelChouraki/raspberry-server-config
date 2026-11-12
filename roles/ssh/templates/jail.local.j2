@@ -1,0 +1,11 @@
+# {{ ansible_managed }}
+[DEFAULT]
+bantime = {{ ssh_fail2ban_ban_time }}
+findtime = {{ ssh_fail2ban_find_time }}
+banaction = nftables-multiport
+
+[sshd]
+enabled = true
+backend = systemd
+port = {{ ssh_port }}
+maxretry = {{ ssh_fail2ban_max_retry }}

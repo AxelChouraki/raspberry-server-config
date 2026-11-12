@@ -1,0 +1,7 @@
+# Secrets : jamais dans git (sauvegarder vault.yml ailleurs, ex. gestionnaire de mots de passe)
+.vault_pass
+group_vars/all/vault.yml
+host_vars/*/vault.yml
+# Logs / fichiers temporaires Ansible
+ansible.log
+*.retry
