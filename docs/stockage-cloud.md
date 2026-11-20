@@ -61,9 +61,34 @@ Si le besoin téléphone est surtout la sauvegarde des photos, **Immich** fait m
 | **GlusterFS** | Écarté : à deux nœuds, il faut choisir entre risque de split-brain et perte de la haute disponibilité. Complexité de datacenter pour un besoin domestique |
 | **Immich** | Hors sujet pour les fichiers, mais la référence si le besoin réel est de remplacer Google Photos |
 
-## Décision : un cloud personnel multi-utilisateurs
+## Décision retenue (novembre 2026)
 
-Choix retenu : un « Drive » auto-hébergé sur rpi2 (zone SERVICES), ouvert à d'autres personnes, avec une sauvegarde chiffrée hors site (voir [architecture.md](architecture.md#sauvegardes)).
+**Tailscale + Nextcloud AIO + un serveur simple, sans DMZ, VLAN ni sous-réseau dédié.** C'est l'option qui répond au besoin : un cloud personnel pour soi et quelques proches, 500 Go à 1 To de données, sans rien exposer sur Internet.
+
+| Élément | Choix |
+|---------|-------|
+| Serveur | rpi2 (NVMe 1 To), sur le LAN de la Freebox comme aujourd'hui |
+| Logiciel | **Nextcloud AIO** (Docker) : mises à jour en un clic, sauvegarde Borg intégrée |
+| Accès | **Tailscale** : aucun port ouvert sur la Freebox, partage de la seule machine Nextcloud avec chaque proche, double authentification sur le compte Tailscale |
+| Exposition publique | Aucune. Pas de Cloudflare Tunnel pour le cloud |
+| Sauvegarde hors site | **Provisoire** : Google Drive (100 Go, abonnement existant), pour les données irremplaçables seulement (documents, photos), chiffrées avant l'envoi. **Cible recommandée** : Storage Box Hetzner (voir plus bas) |
+| Sauvegarde locale | Sauvegarde Borg d'AIO vers un disque USB branché sur rpi2 |
+| Débit | Limitation de débit sur le port du switch où est branchée rpi2, pour ne jamais saturer l'upload de la maison |
+
+Pourquoi pas l'architecture complète (OPNsense, DMZ, VLAN) : sans aucun service exposé, la segmentation n'a presque plus rien à protéger, alors que les vrais risques d'un cloud perso (perte de données, compte compromis, mises à jour oubliées) se règlent par la sauvegarde, le VPN et AIO. L'architecture complète reste décrite dans [architecture.md](architecture.md) pour le jour où un service public dynamique ou l'isolation des objets connectés le justifiera.
+
+**Sauvegarde hors site : Google est un choix d'attente, pas le meilleur.** Classement des options pour ce montage :
+
+| Rang | Option | Coût | Pourquoi |
+|------|--------|------|----------|
+| 1 | **Storage Box Hetzner 1 To** | ~3,80 €/mois | Destination native de la sauvegarde Borg distante d'AIO (SSH), tout le volume tient, trafic illimité, instantanés côté Hetzner qui protègent même si rpi2 est compromis |
+| 2 | Pi + disque chez un proche | Prix du disque | Gratuit ensuite, dépôt Borg en SSH via Tailscale, mode *append-only* possible ; dépend de la bonne volonté et de la connexion du proche |
+| 3 | Backblaze B2 | ~6 $/To/mois | Fiable, verrou anti-effacement, mais en S3 : pas de sauvegarde Borg distante directe depuis AIO, il faut recopier le dépôt avec rclone |
+| 4 | Google Drive 100 Go (actuel) | 0 € de plus | Déjà payé, mais seulement 100 Go (pas tout le volume), recopie du dépôt Borg avec rclone, aucune protection contre l'effacement au-delà de la corbeille, dépendance au compte Google |
+
+Passer à la Storage Box dès que les données irremplaçables approchent 100 Go, ou si l'on veut sauvegarder tout le volume. Le stockage S3 « à froid » est écarté : incompatible avec les sauvegardes incrémentales de Borg et restic, restauration lente et payante.
+
+Les sections suivantes retracent la réflexion qui a mené à ce choix.
 
 ### Nextcloud ou OpenCloud ?
 
@@ -81,7 +106,7 @@ Les deux gèrent plusieurs utilisateurs, des groupes, des dossiers partagés et 
 
 En résumé : **OpenCloud** si le besoin est « des fichiers, pour moi et quelques proches » ; **Nextcloud** si l'on veut aussi agenda, contacts ou édition de documents en ligne.
 
-Choix retenu : **OpenCloud**. Appli Android officielle sur Google Play et F-Droid (paquet `eu.opencloud.android`, Android 8 minimum), appli iOS et client de synchronisation pour ordinateur.
+OpenCloud a ses applis officielles (Android sur Google Play et F-Droid, iOS, client pour ordinateur), mais **Nextcloud AIO** a finalement été retenu : installation et mises à jour gérées, sauvegarde intégrée, écosystème plus mûr.
 
 ### Coût comparé à Google One
 
@@ -102,8 +127,9 @@ Référence : Google One 100 Go à 1,99 €/mois.
 
 Le cloud est derrière le VPN, donc chaque personne doit pouvoir s'y connecter :
 
-- **Recommandé : un pair WireGuard par personne.** Une configuration générée sur OPNsense, transmise par QR code, l'appli WireGuard en connexion permanente : c'est transparent à l'usage. Sur OPNsense, limiter ces pairs au seul port HTTPS du cloud sur rpi2 (pas de SSH, pas de Grafana). Révoquer quelqu'un = supprimer son pair.
-- **Si quelqu'un ne peut pas installer de VPN** : publier le cloud via le Tunnel Cloudflare, protégé par Cloudflare Access (authentification avant d'atteindre le serveur). Le cloud passe alors en DMZ, Cloudflare voit les fichiers en clair, et le plan gratuit limite chaque requête à 100 Mo (les deux logiciels découpent les envois, ça reste utilisable). À réserver au cas où le VPN est vraiment impossible.
+- **Retenu : Tailscale.** Chaque proche installe Tailscale avec son propre compte ; on lui partage uniquement la machine Nextcloud (*node sharing*). Il ne voit rien d'autre du réseau, et le retirer se fait d'un clic. Aucun port ouvert sur la Freebox.
+- **Sans tiers** : WireGuard, avec un pair par personne. Celui de la Freebox est le plus simple, mais donne accès à tout le LAN ; Headscale reproduit Tailscale en auto-hébergé.
+- **Si quelqu'un ne peut pas installer de VPN** : publier Nextcloud via un Tunnel Cloudflare et un nom de domaine. Nextcloud devient public (double authentification et mots de passe forts obligatoires), Cloudflare voit les fichiers en clair, et le plan gratuit limite chaque requête à 100 Mo. Cloudflare Access n'est pas une solution ici : les applis Nextcloud ne savent pas passer son authentification.
 
 ### Partager un fichier avec quelqu'un d'extérieur
 

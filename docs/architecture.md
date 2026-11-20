@@ -1,5 +1,7 @@
 # Architecture réseau cible
 
+> **Décision (novembre 2026)** : pour le cloud personnel, l'architecture retenue est volontairement simple : **Tailscale + Nextcloud AIO sur rpi2, sur le LAN de la Freebox, sans DMZ, VLAN ni sous-réseau dédié**. Détails et raisons dans [stockage-cloud.md](stockage-cloud.md#décision-retenue-novembre-2026). Le reste de ce document décrit l'architecture segmentée complète, à reprendre si un service public dynamique ou l'isolation des objets connectés le justifie un jour.
+
 ## Le besoin
 
 1. Héberger des services à la maison : un site perso public, du stockage de fichiers privé, le monitoring.
